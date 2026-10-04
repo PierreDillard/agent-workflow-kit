@@ -1,5 +1,7 @@
 # Agent Workflow Kit
 
+[![CI](https://github.com/PierreDillard/agent-workflow-kit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/PierreDillard/agent-workflow-kit/actions/workflows/ci.yml)
+
 **Organize work with your AI, your way.**
 
 Less context to repeat, clear task tracking, and decisions preserved between sessions.
@@ -38,7 +40,14 @@ or Learning to help you understand the project.
 **Prerequisites**: a Git project, one of the agents above, Linux, Bash, Node.js 18+, `rsync`,
 and standard GNU utilities. macOS and Windows have not been validated yet.
 
-From the kit directory, replace `/path/to/my-project` with your project's root directory:
+Clone the kit and open its directory:
+
+```bash
+git clone https://github.com/PierreDillard/agent-workflow-kit.git
+cd agent-workflow-kit
+```
+
+Then replace `/path/to/my-project` with your project's root directory:
 
 ```bash
 # Preview the installation without changing the project
