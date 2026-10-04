@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "tasks",
+  "version": "1.0.0",
+  "description": "Tasks workflow capabilities",
+  "requires": {},
+  "skills": [
+    {
+      "name": "ants",
+      "source": "skills/ants",
+      "global": true
+    },
+    {
+      "name": "write-task",
+      "source": "skills/write-task"
+    }
+  ],
+  "files": [],
+  "rules": [
+    {
+      "id": "main",
+      "source": "rules/main.md",
+      "point": "task-validation"
+    }
+  ],
+  "hooks": [],
+  "checks": []
+}

@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "timezone": "{{REPORT_TIMEZONE}}",
+  "objectives": "{{TASKS_DIR}}/reports/objectives.md",
+  "author_emails": [],
+  "sources": [
+    {
+      "name": "project",
+      "path": ".",
+      "path_env": "WEEKLY_REPORT_PROJECT_ROOT"
+    }
+  ]
+}

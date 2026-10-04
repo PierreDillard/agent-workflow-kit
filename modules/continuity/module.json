@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "continuity",
+  "version": "1.0.0",
+  "description": "Continuity workflow capabilities",
+  "requires": {
+    "tasks": "*",
+    "memory": "*"
+  },
+  "skills": [
+    {
+      "name": "project-handoff",
+      "source": "skills/project-handoff"
+    },
+    {
+      "name": "context-relay",
+      "source": "skills/context-relay"
+    }
+  ],
+  "files": [],
+  "rules": [
+    {
+      "id": "main",
+      "source": "rules/main.md",
+      "point": "session-start"
+    }
+  ],
+  "hooks": [],
+  "checks": []
+}

@@ -1,0 +1,17 @@
+.DS_Store
+node_modules/
+coverage/
+.workflow-install.lock
+
+# Local planning records and historical snapshots kept outside the public package.
+/tasks/
+/global-skills/
+/components.tsv
+/scripts/configure-reporting.mjs
+/templates/project/.claude/agents/
+/templates/project/.claude/hooks/
+/templates/project/.claude/scripts/
+/templates/project/.claude/skills/
+/templates/project/.codex/skills/
+/templates/project/.workflow/PROJECT_RULES.md
+/templates/project/tasks/

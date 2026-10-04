@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "learning",
+  "version": "1.0.0",
+  "description": "Learning workflow capabilities",
+  "requires": {},
+  "skills": [
+    {
+      "name": "teach",
+      "source": "skills/teach",
+      "global": true
+    },
+    {
+      "name": "explain-simply",
+      "source": "skills/explain-simply",
+      "global": true
+    }
+  ],
+  "files": [],
+  "rules": [
+    {
+      "id": "main",
+      "source": "rules/main.md",
+      "point": "task-validation"
+    }
+  ],
+  "hooks": [],
+  "checks": []
+}

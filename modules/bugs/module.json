@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "bugs",
+  "version": "1.0.0",
+  "description": "Bugs workflow capabilities",
+  "requires": {},
+  "skills": [
+    {
+      "name": "bug-triage",
+      "source": "skills/bug-triage"
+    },
+    {
+      "name": "bug-fix-trace",
+      "source": "skills/bug-fix-trace"
+    }
+  ],
+  "files": [
+    {
+      "source": "files/README.md",
+      "target": "{{TASKS_DIR}}/bugs/README.md",
+      "editable": true
+    }
+  ],
+  "rules": [
+    {
+      "id": "main",
+      "source": "rules/main.md",
+      "point": "task-validation"
+    }
+  ],
+  "hooks": [],
+  "checks": []
+}

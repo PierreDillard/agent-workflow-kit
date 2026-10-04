@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "id": "quality",
+  "version": "1.0.0",
+  "description": "Quality workflow capabilities",
+  "requires": {
+    "tasks": "*"
+  },
+  "skills": [
+    {
+      "name": "architect",
+      "source": "skills/architect",
+      "global": true
+    },
+    {
+      "name": "code-simplification",
+      "source": "skills/code-simplification",
+      "global": true
+    },
+    {
+      "name": "consistency-check",
+      "source": "skills/consistency-check",
+      "global": true
+    },
+    {
+      "name": "done-check",
+      "source": "skills/done-check",
+      "global": true
+    },
+    {
+      "name": "explicit-naming",
+      "source": "skills/explicit-naming",
+      "global": true
+    },
+    {
+      "name": "failure-containment",
+      "source": "skills/failure-containment",
+      "global": true
+    },
+    {
+      "name": "next-change",
+      "source": "skills/next-change",
+      "global": true
+    },
+    {
+      "name": "novice-lens",
+      "source": "skills/novice-lens",
+      "global": true
+    },
+    {
+      "name": "replace-not-add",
+      "source": "skills/replace-not-add",
+      "global": true
+    },
+    {
+      "name": "reuse",
+      "source": "skills/reuse",
+      "global": true
+    },
+    {
+      "name": "tdd",
+      "source": "skills/tdd",
+      "global": true
+    },
+    {
+      "name": "type-honesty",
+      "source": "skills/type-honesty",
+      "global": true
+    },
+    {
+      "name": "validate-task",
+      "source": "skills/validate-task",
+      "global": true
+    },
+    {
+      "name": "merge-integrity",
+      "source": "skills/merge-integrity"
+    },
+    {
+      "name": "perf-gate",
+      "source": "skills/perf-gate"
+    },
+    {
+      "name": "resource-ownership",
+      "source": "skills/resource-ownership"
+    },
+    {
+      "name": "review-gate",
+      "source": "skills/review-gate"
+    },
+    {
+      "name": "soak-readiness",
+      "source": "skills/soak-readiness"
+    }
+  ],
+  "files": [
+    {
+      "source": "files/regression-guard.md",
+      "target": ".claude/agents/regression-guard.md"
+    },
+    {
+      "source": "files/feature-diagnostic-scout.md",
+      "target": ".claude/agents/feature-diagnostic-scout.md"
+    }
+  ],
+  "rules": [
+    {
+      "id": "main",
+      "source": "rules/main.md",
+      "point": "task-validation"
+    }
+  ],
+  "hooks": [],
+  "checks": []
+}

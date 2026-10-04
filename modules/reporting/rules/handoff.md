@@ -1,0 +1,1 @@
+Before replacing a handoff, invoke `weekly-report` in `handoff` mode with previous state and verified advances. Propose candidates together, save unanswered notes as pending, and finish without waiting.

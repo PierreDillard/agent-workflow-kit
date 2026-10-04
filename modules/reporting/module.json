@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "reporting",
+  "version": "1.0.0",
+  "description": "Reporting workflow capabilities",
+  "requires": {},
+  "skills": [
+    {
+      "name": "weekly-report",
+      "source": "skills/weekly-report"
+    }
+  ],
+  "files": [
+    {
+      "source": "files/README.md",
+      "target": "{{TASKS_DIR}}/reports/README.md",
+      "editable": true
+    },
+    {
+      "source": "files/config.json",
+      "target": "{{TASKS_DIR}}/reports/config.json",
+      "editable": true
+    },
+    {
+      "source": "files/objectives.md",
+      "target": "{{TASKS_DIR}}/reports/objectives.md",
+      "editable": true
+    },
+    {
+      "source": "files/weekly-report-status.sh",
+      "target": ".claude/scripts/weekly-report-status.sh"
+    },
+    {
+      "source": "files/weekly-report-status.mjs",
+      "target": ".claude/scripts/weekly-report-status.mjs"
+    }
+  ],
+  "rules": [
+    {
+      "id": "main",
+      "source": "rules/main.md",
+      "point": "session-start"
+    },
+    {
+      "id": "handoff",
+      "source": "rules/handoff.md",
+      "point": "before-handoff",
+      "when": [
+        "continuity"
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "id": "reminder",
+      "point": "session-start",
+      "path": ".claude/scripts/weekly-report-status.sh",
+      "runner": "bash",
+      "args": [
+        "--hook"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "path": "{{TASKS_DIR}}/reports/config.json",
+      "type": "timezone"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "exploration",
+  "version": "1.0.0",
+  "description": "Exploration workflow capabilities",
+  "requires": {
+    "tasks": "*",
+    "continuity": "*"
+  },
+  "skills": [
+    {
+      "name": "grill-me",
+      "source": "skills/grill-me"
+    },
+    {
+      "name": "wayfinder",
+      "source": "skills/wayfinder"
+    }
+  ],
+  "files": [],
+  "rules": [
+    {
+      "id": "main",
+      "source": "rules/main.md",
+      "point": "task-validation"
+    }
+  ],
+  "hooks": [],
+  "checks": []
+}

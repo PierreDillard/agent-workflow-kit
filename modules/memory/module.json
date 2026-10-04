@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "id": "memory",
+  "version": "1.0.0",
+  "description": "Memory workflow capabilities",
+  "requires": {},
+  "skills": [
+    {
+      "name": "memory-report",
+      "source": "skills/memory-report"
+    }
+  ],
+  "files": [
+    {
+      "source": "files/PROJECT_MEMORY.md",
+      "target": "{{TASKS_DIR}}/PROJECT_MEMORY.md",
+      "editable": true
+    },
+    {
+      "source": "files/DECISIONS.md",
+      "target": "{{TASKS_DIR}}/DECISIONS.md",
+      "editable": true
+    }
+  ],
+  "rules": [
+    {
+      "id": "main",
+      "source": "rules/main.md",
+      "point": "session-start"
+    }
+  ],
+  "hooks": [],
+  "checks": [
+    {
+      "path": "{{TASKS_DIR}}/PROJECT_MEMORY.md",
+      "type": "file",
+      "maxBytes": 8192
+    },
+    {
+      "path": "{{TASKS_DIR}}/DECISIONS.md",
+      "type": "file",
+      "maxBytes": 32768
+    }
+  ]
+}

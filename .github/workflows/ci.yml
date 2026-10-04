@@ -1,0 +1,33 @@
+name: Validate workflow kit
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Verify required tools
+        run: |
+          command -v bash git node rsync awk sed sort tac find
+          node --version
+
+      - name: Run workflow-kit tests
+        run: bash tests/run.sh
+
+      - name: Verify publication archive
+        run: bash tests/publication-candidate.sh
