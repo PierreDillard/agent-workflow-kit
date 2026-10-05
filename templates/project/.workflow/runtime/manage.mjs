@@ -6,6 +6,7 @@ import { loadCatalog, resolveModules, officialModules } from './catalog.mjs';
 import { materializeModule, composeRules, composeComponents } from './compose.mjs';
 import { loadState, checkState, checkPrecommit } from './doctor.mjs';
 import { applyPlan } from './transaction.mjs';
+import { assertSkillProposalApproval, assertSkillProposalPlan } from './proposal-records.mjs';
 
 const pointer = '<!-- workflow-kit:start -->\nWorkflow authority: [.workflow/PROJECT_RULES.md](.workflow/PROJECT_RULES.md).\nRead `.workflow-kit.env` and the installed module rules; load only relevant context.\n<!-- workflow-kit:end -->';
 const quoteShell = value => `'${String(value).replaceAll("'", "'\\''")}'`;
@@ -45,6 +46,9 @@ export function installOrAdd(options) {
   const entries = [];
   const modules = [];
   for (const manifest of ordered) {
+    const approvalSource = catalog.get(manifest.id);
+    const plannedModule = approvalSource ? assertSkillProposalApproval(approvalSource.directory, projectRoot, {
+      dryRun: options.dryRun, installGlobalSkills: configuration.installGlobalSkills }) : null;
     const installed = previous?.modules.find(module => module.id === manifest.id);
     if (installed) {
       if (explicit.includes(manifest.id) || options.modules?.includes(manifest.id) || Object.keys(options.settings).some(key => key.startsWith(`${manifest.id}.`))) {
@@ -52,11 +56,13 @@ export function installOrAdd(options) {
         if (!source) throw new Error(`Source required to verify installed module: ${manifest.id}`);
         const savedSettings = Object.fromEntries(Object.entries(installed.settings).map(([key, value]) => [`${manifest.id}.${key}`, value]));
         const candidate = materializeModule(source, configuration, { ...savedSettings, ...options.settings });
+        assertSkillProposalPlan(plannedModule, candidate.module);
         if (candidate.module.fingerprint !== installed.fingerprint) throw new Error(`Module already installed with different content or configuration: ${manifest.id}; upgrades are not supported`);
       }
       modules.push(installed);
     } else {
       const materialized = materializeModule(catalog.get(manifest.id), configuration, options.settings);
+      assertSkillProposalPlan(plannedModule, materialized.module);
       modules.push(materialized.module);
       entries.push(...materialized.entries);
     }

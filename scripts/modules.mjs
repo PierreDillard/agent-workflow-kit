@@ -1,15 +1,20 @@
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { loadState, checkState } from '../templates/project/.workflow/runtime/doctor.mjs';
+import { safePath } from '../templates/project/.workflow/runtime/paths.mjs';
 import { installOrAdd } from '../templates/project/.workflow/runtime/manage.mjs';
 import { loadCatalog } from '../templates/project/.workflow/runtime/catalog.mjs';
+import { selectCatalogSkills } from './skill-selection.mjs';
+import { inspectModule } from './module-inspection.mjs';
 
 const kitRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const argumentsList = process.argv.slice(2);
 const command = argumentsList.shift();
 const options = { command, kitRoot, catalogs: [join(kitRoot, 'modules')], sources: [], settings: {}, dryRun: false };
 try {
-  if (!['install', 'add', 'list'].includes(command)) throw new Error('Usage: module.sh add|list --target PATH [--module PATH] [--modules id,id] [--catalog PATH] [--set module.key=value] [--dry-run]');
+  if (!['install', 'add', 'list', 'select', 'inspect'].includes(command)) throw new Error('Usage: module.sh inspect --module PATH | select --skills name,name [--target PATH] | add|list --target PATH [--module PATH] [--modules id,id] [--catalog PATH] [--set module.key=value] [--dry-run]');
   while (argumentsList.length) {
     const flag = argumentsList.shift();
     if (flag === '--dry-run') { options.dryRun = true; continue; }
@@ -19,6 +24,7 @@ try {
     else if (flag === '--user-root') options.userRoot = value;
     else if (flag === '--profile') options.profile = value;
     else if (flag === '--modules') options.modules = value.split(',');
+    else if (flag === '--skills') options.skills = value.split(',');
     else if (flag === '--module') options.sources.push(value);
     else if (flag === '--catalog') options.catalogs.push(value);
     else if (flag === '--set') {
@@ -27,7 +33,33 @@ try {
       options.settings[value.slice(0, separator)] = value.slice(separator + 1);
     } else throw new Error(`Unknown argument: ${flag}`);
   }
-  if (command === 'list') {
+  if (options.skills && command !== 'select') throw new Error('--skills is only supported by select');
+  if (command === 'inspect') {
+    if (options.sources.length !== 1 || options.catalogs.length !== 1 || options.modules || options.profile ||
+        options.target || options.userRoot || options.dryRun || Object.keys(options.settings).length) {
+      throw new Error('inspect accepts exactly one --module');
+    }
+    console.log(JSON.stringify(inspectModule(options.sources[0]), null, 2));
+  } else if (command === 'select') {
+    if (options.catalogs.length !== 1 || options.sources.length) throw new Error('select uses the official catalog only');
+    if (options.modules || options.profile || options.userRoot || options.dryRun || Object.keys(options.settings).length) {
+      throw new Error('select accepts --skills and optional --target');
+    }
+    const { catalog } = loadCatalog(options.catalogs, []);
+    let installedState = null;
+    if (options.target) {
+      const projectRoot = resolve(options.target);
+      const gitRoot = execFileSync('git', ['-C', projectRoot, 'rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
+      if (gitRoot !== projectRoot) throw new Error('Target must be a Git repository root');
+      if (existsSync(safePath(projectRoot, '.workflow-kit.json'))) {
+        installedState = loadState(projectRoot);
+        checkState(installedState, { project: projectRoot, user: process.env.WORKFLOW_USER_ROOT ?? installedState.configuration.userRoot });
+      }
+    }
+    const proposal = selectCatalogSkills(catalog, options.skills, installedState);
+    console.log(JSON.stringify(proposal, null, 2));
+    if (!proposal.isComplete) process.exitCode = 1;
+  } else if (command === 'list') {
     const { catalog } = loadCatalog(options.catalogs, options.sources);
     for (const { manifest } of catalog.values()) console.log(`${manifest.id}@${manifest.version}\t${manifest.description}`);
   } else {

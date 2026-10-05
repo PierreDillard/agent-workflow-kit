@@ -6,10 +6,11 @@ The project owner identifies the following shipped skills as derived from
 | Shipped path | Upstream skill | Attribution status |
 |---|---|---|
 | `modules/quality/skills/tdd/` | `tdd` | Derived from Matt Pocock's skill; local adaptations may exist. |
+| `core/skills/write-a-skill/` | `write-a-skill` | Local adaptation requested by the project owner on 2026-10-05. |
 | `modules/exploration/skills/grill-me/` | `grill-me` | Derived from Matt Pocock's skill; local adaptations may exist. |
 
-`write-a-skill` is also attributed to Matt Pocock by the project owner, but it is not currently
-shipped in this repository. Do not add it without retaining this notice and its license.
+`write-a-skill` retains the attribution declared by the project owner. Its portable copy
+comes from the locally improved skill, not a newly downloaded upstream revision.
 
 The upstream repository declares the MIT License, copyright (c) 2026 Matt Pocock. The complete
 notice below is included because the upstream license requires it in copies or substantial portions.

@@ -105,3 +105,70 @@ Use an isolated Git checkout and a temporary `--user-root`, run installation or 
 then activate and run `.claude/scripts/workflow-doctor.sh`. Check that user data remains unchanged,
 repeating activation is a no-op, and conditional contributions appear only with their companions.
 Run `bash tests/run.sh` for the kit's integration, rollback and reporting tests.
+
+## Agent-directed customization
+
+The [customization contract](agent-customization.md) describes the planned agent-driven selection,
+local creation with user approval and justified external intake. Reuse available capabilities;
+prefer a minimal locally created skill for unmet needs. External packages are a last resort,
+with a concrete justification. File-level proposal/approval mechanisms are tested in fixtures;
+native-agent behavior remains unvalidated.
+
+## Select official skills before installation
+
+Use the read-only selector after the project diagnostic identifies a concrete need:
+
+```bash
+bash module.sh select --skills project-handoff
+```
+
+The JSON proposal identifies each owning module, dependency modules, included skills and extra
+skills that will be installed with those modules. It includes the source content and conditions
+of their rule fragments, plus a requiresRuleApproval flag. It does not execute module code,
+activate capabilities or write an installation.
+
+For project-handoff, the existing catalog resolves continuity with tasks and memory. The plan
+also includes context-relay, ants, write-task and memory-report. Selection is currently by module:
+a single skill cannot be installed separately from its owner's other contributions.
+
+Use --target to compare the proposal with a project's verified installation:
+
+```bash
+bash module.sh select --skills project-handoff --target /path/to/my-project
+```
+
+The plan distinguishes installedSkills from proposedSkills and marks each module's isInstalled
+state. Newly activated conditional rules or hooks from existing modules are reported separately.
+An unchanged selection of already installed modules proposes no skills and needs no new rule
+approval. Catalog content that differs from the installed fingerprint is refused; upgrades remain
+unsupported. Changed managed files also block planning rather than being treated as a valid baseline.
+
+The selector accepts official catalog skills, --skills and optional --target. External catalogs,
+sources and installation options are refused. Unknown names stay in unresolvedSkills; isComplete
+is false and the command exits with code 1. Do not apply that partial proposal: resolve the missing
+needs first. Record each need and its evidence alongside the proposal; a match alone is insufficient.
+Unmanaged and user-global skills are not classified as installed capabilities by this inventory.
+
+Before applying a proposal, inspect the installer's complete dry-run. Obtain approval for any
+new or changed rules and workflow steps, including those supplied by official modules and the
+initial core. Then use the existing installer with the proposal's requestedModules, or module.sh
+add for an existing installation. The selector reports approval requirements; it does not enforce
+an approval decision in the installer or validate that the user gave one.
+
+## Inspect external packages
+
+Use `module.sh inspect --module DIRECTORY` to produce a complete read-only package review.
+The [external intake procedure](external-skill-intake.md) covers provenance, quarantine, dry-run
+and user approval before activation. Inspection never executes imported scripts or hooks.
+
+## Draft created skills
+
+`write-a-skill` is delivered in the core without global export. The
+[created skill procedure](created-skill-approval.md) retains proposals outside discovery, records
+explicit agreement on an exact package and target, and activates through the existing engine.
+Task 05 E1/E2/E3 are tested in fixtures, including silence, refusal, stale-state handling, renewed
+agreement, fresh-process resume, identical repetition and preserved files on conflicts.
+A real exact-package user agreement and local fixture activation are verified for review-local-skill.
+Native agent behavior remains unproven. This mechanism does not
+cover official rule approvals. External single-skill proposals use the same circuit; see the
+[external intake procedure](external-skill-intake.md). Real external activation is on hold following the local-creation priority correction.

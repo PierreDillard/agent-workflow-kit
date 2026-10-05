@@ -61,6 +61,12 @@ Answer the questions about your project, then open your assistant in that projec
 Instructions and skills — specialized guides for the assistant — are prepared for all three
 agents. Hooks are configured for Claude Code and Codex; approve them if your assistant asks.
 
+## Start as a coding agent
+
+If your agent is retrieving the kit from a project, use the [agent entry](docs/agent-start.md)
+for a revision-pinned checkout and a non-interactive dry-run with global exports disabled.
+Automatic selection and approval enforcement remain work in progress.
+
 ## Your kit, your modules
 
 **Use only the parts you need**, then add modules as your needs grow.

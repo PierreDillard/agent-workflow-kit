@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, lstatSync, existsSync, rmSync, symlinkSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, lstatSync, existsSync, rmSync, symlinkSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { installOrAdd } from '../templates/project/.workflow/runtime/manage.mjs';
 import { loadCatalog, officialModules } from '../templates/project/.workflow/runtime/catalog.mjs';
+import { selectCatalogSkills } from '../scripts/skill-selection.mjs';
 
 const repository = resolve(new URL('..', import.meta.url).pathname);
 
@@ -279,4 +280,132 @@ test('planned file versus directory collision fails during dry run', context => 
   const before = snapshot(setup.project);
   assert.match(add(setup, ['--module', source, '--dry-run'], false), /destination conflict/);
   assert.deepEqual(snapshot(setup.project), before);
+});
+
+test('skill selection: read-only official proposal, explicit dependencies and existing installer integration', context => {
+  const setup = fixture(context);
+  writeFileSync(join(setup.project, 'project.txt'), 'Preserve project data.\n');
+  const beforeProject = snapshot(setup.project);
+  const beforeUser = snapshot(setup.user);
+  const proposal = JSON.parse(command('bash', ['module.sh', 'select', '--skills', 'project-handoff']));
+  assert.deepEqual(proposal.requestedModules, ['continuity']);
+  assert.deepEqual(proposal.modules.map(module => module.id), ['memory', 'tasks', 'continuity']);
+  assert.deepEqual(proposal.additionalSkills, ['ants', 'context-relay', 'memory-report', 'write-task']);
+  assert.equal(proposal.requiresRuleApproval, true);
+  assert.equal(proposal.isInstallation, false);
+  assert.ok(proposal.modules.every(module => module.rules.every(rule => rule.content.length > 0)));
+  assert.deepEqual(snapshot(setup.project), beforeProject);
+  assert.deepEqual(snapshot(setup.user), beforeUser);
+  assert.deepEqual(JSON.parse(command('bash', ['module.sh', 'select', '--skills', 'missing-skill'], false)).unresolvedSkills, ['missing-skill']);
+  assert.match(command('bash', ['module.sh', 'select', '--skills', 'teach', '--catalog', 'examples/modules'], false), /official catalog only/);
+  assert.match(command('bash', ['module.sh', 'add', '--target', setup.project, '--skills', 'teach'], false), /--skills is only supported by select/);
+  assert.deepEqual(snapshot(setup.project), beforeProject);
+  // Fixture assumes rule approval; this is installation proof, not a human approval test.
+  const selectedModules = proposal.requestedModules.join(',');
+  assert.match(install(setup, ['--modules', selectedModules, '--dry-run']), /DRY RUN/);
+  assert.deepEqual(snapshot(setup.project), beforeProject);
+  install(setup, ['--modules', selectedModules]);
+  for (const client of ['.claude', '.codex']) {
+    const skill = read(setup, `${client}/skills/project-handoff/SKILL.md`);
+    assert.equal(skill, readFileSync(join(repository, 'modules/continuity/skills/project-handoff/SKILL.md'), 'utf8'));
+  }
+  assert.equal(read(setup, 'project.txt'), 'Preserve project data.\n');
+  assert.deepEqual(snapshot(setup.user), beforeUser);
+  assert.match(command('bash', [join(setup.project, '.claude/scripts/workflow-doctor.sh')]), /0 failure/);
+});
+
+test('skill selection: installed capabilities, exact repeat and conditional rule activation', context => {
+  const setup = fixture(context); install(setup);
+  add(setup, ['--modules', 'reporting']);
+  writeFileSync(join(setup.project, 'planning notes/tasks/PROJECT_MEMORY.md'), '# User notes preserved\n');
+  const beforeProject = snapshot(setup.project);
+  const beforeUser = snapshot(setup.user);
+  const selectArguments = ['module.sh', 'select', '--skills', 'project-handoff', '--target', setup.project];
+  const proposal = JSON.parse(command('bash', selectArguments));
+  assert.deepEqual(proposal.proposedSkills, ['context-relay', 'project-handoff']);
+  assert.ok(proposal.installedSkills.includes('write-task'));
+  assert.ok(proposal.installedSkills.includes('weekly-report'));
+  assert.equal(proposal.modules.find(module => module.id === 'tasks').isInstalled, true);
+  assert.deepEqual(proposal.activatedExistingRules.map(rule => [rule.module, rule.id]), [['reporting', 'handoff']]);
+  assert.equal(command('bash', selectArguments), command('bash', selectArguments));
+  assert.deepEqual(snapshot(setup.project), beforeProject);
+  assert.deepEqual(snapshot(setup.user), beforeUser);
+  // Isolated fixture assumes approval of the new and newly activated rules.
+  add(setup, ['--modules', proposal.requestedModules.join(',')]);
+  const repeated = JSON.parse(command('bash', selectArguments));
+  assert.deepEqual(repeated.proposedSkills, []);
+  assert.deepEqual(repeated.activatedExistingRules, []);
+  assert.equal(repeated.requiresRuleApproval, false);
+  const afterProject = snapshot(setup.project);
+  add(setup, ['--modules', proposal.requestedModules.join(',')]);
+  assert.deepEqual(snapshot(setup.project), afterProject);
+  assert.deepEqual(snapshot(setup.user), beforeUser);
+  assert.equal(read(setup, 'planning notes/tasks/PROJECT_MEMORY.md'), '# User notes preserved\n');
+  const unresolved = JSON.parse(command('bash', ['module.sh', 'select', '--skills', 'teach,unknown-skill', '--target', setup.project], false));
+  assert.deepEqual(unresolved.unresolvedSkills, ['unknown-skill']);
+  assert.equal(unresolved.isComplete, false);
+  assert.deepEqual(unresolved.requestedModules, ['learning']);
+  assert.deepEqual(snapshot(setup.project), afterProject);
+  writeFileSync(join(setup.project, '.workflow/PROJECT_RULES.md'), '# Concurrent user change\n');
+  const changedProject = snapshot(setup.project);
+  assert.match(command('bash', selectArguments, false), /Managed file changed/);
+  assert.deepEqual(snapshot(setup.project), changedProject);
+});
+
+test('skill selection: missing dependency and conflicting owners refuse without installation', context => {
+  const setup = fixture(context);
+  const { catalog } = loadCatalog([join(repository, 'modules')], []);
+  const before = snapshot(setup.project);
+  const missingDependency = new Map(catalog);
+  const continuity = catalog.get('continuity');
+  missingDependency.set('continuity', { ...continuity, manifest: { ...continuity.manifest, requires: { missing: '*' } } });
+  assert.throws(() => selectCatalogSkills(missingDependency, ['project-handoff']), /Missing module dependency/);
+  const conflictingOwners = new Map(catalog);
+  const learning = catalog.get('learning');
+  conflictingOwners.set('learning', { ...learning, manifest: { ...learning.manifest, skills: [{ name: 'project-handoff', source: 'skills/teach' }] } });
+  assert.throws(() => selectCatalogSkills(conflictingOwners, ['project-handoff']), /Ambiguous skill owner/);
+  assert.deepEqual(snapshot(setup.project), before);
+});
+
+test('skill selection: changed catalog source cannot be presented as an identical installed module', context => {
+  const setup = fixture(context); install(setup);
+  const sourceRoot = join(setup.root, 'copied-official-catalog');
+  cpSync(join(repository, 'modules'), sourceRoot, { recursive: true });
+  const changedSource = join(sourceRoot, 'tasks/skills/write-task/SKILL.md');
+  writeFileSync(changedSource, readFileSync(changedSource, 'utf8') + '\nChanged source content.\n');
+  const { catalog } = loadCatalog([sourceRoot], []);
+  const before = snapshot(setup.project);
+  assert.throws(() => selectCatalogSkills(catalog, ['write-task'], state(setup)), /different content/);
+  assert.deepEqual(snapshot(setup.project), before);
+});
+
+test('external inspection: complete review data, stable fingerprint and no script execution', context => {
+  const setup = fixture(context);
+  const source = makeModule(setup, 'review-only', {
+    files: [{ source: 'hook.mjs', target: '.claude/scripts/review-only.mjs' }],
+    hooks: [{ id: 'hook', point: 'session-start', runner: 'node', path: '.claude/scripts/review-only.mjs', args: [] }],
+  });
+  const marker = join(setup.root, 'external-script-ran');
+  writeFileSync(join(source, 'hook.mjs'), `import { writeFileSync } from 'node:fs'; writeFileSync(${JSON.stringify(marker)}, 'executed');\n`);
+  writeFileSync(join(source, 'LICENSE.txt'), 'Fixture license text.\n');
+  writeFileSync(join(source, 'binary.bin'), Buffer.from([0, 255]));
+  const beforeProject = snapshot(setup.project);
+  const beforeUser = snapshot(setup.user);
+  const argumentsList = ['module.sh', 'inspect', '--module', source];
+  const review = JSON.parse(command('bash', argumentsList));
+  assert.equal(review.module.id, 'review-only');
+  assert.equal(review.requiresUserApproval, true);
+  assert.equal(review.isActivation, false);
+  assert.equal(review.scriptsExecuted, false);
+  assert.ok(review.files.find(file => file.path === 'hook.mjs').text.includes(marker));
+  assert.equal(review.files.find(file => file.path === 'binary.bin').text, null);
+  assert.equal(review.files.find(file => file.path === 'LICENSE.txt').text, 'Fixture license text.\n');
+  assert.equal(command('bash', argumentsList), command('bash', argumentsList));
+  assert.equal(existsSync(marker), false);
+  assert.deepEqual(snapshot(setup.project), beforeProject);
+  assert.deepEqual(snapshot(setup.user), beforeUser);
+  writeFileSync(join(source, 'hook.mjs'), '// Modified after review\n');
+  const changed = JSON.parse(command('bash', argumentsList));
+  assert.notEqual(changed.packageFingerprint, review.packageFingerprint);
+  assert.equal(existsSync(marker), false);
 });
