@@ -75,8 +75,6 @@ test('minimal: selected capabilities only, project context preserved, dry run no
   const installedWriteTask = read(setup, '.claude/skills/write-task/SKILL.md');
   assert.equal(installedWriteTask, sourceWriteTask);
   assert.equal(read(setup, '.codex/skills/write-task/SKILL.md'), sourceWriteTask);
-  assert.equal((installedWriteTask.match(/^\*\*Understanding — mandatory stop\*\*$/gm) ?? []).length, 1);
-  assert.equal((installedWriteTask.match(/Insert the complete Required understanding block/g) ?? []).length, 2);
   assert.match(installedWriteTask, /for every remaining step/);
   assert.equal(existsSync(join(setup.project, '.agents')), false);
   assert.match(read(setup, 'CLAUDE.md'), /^# Local rules/);

@@ -30,8 +30,6 @@ extra section for unrelated tasks:
 - Real slice: {input → necessary boundaries → observable result}
 
 **Signal** : {verification method and expected result}
-
-{Insert the complete Required understanding block below, with a question about this proof.}
 ```
 
 Make dependent steps conditional on this Signal. Keep deferred work in `Non-goals` and record
@@ -63,8 +61,7 @@ validator: Observable completion proof
 ## ANTS steps
 ### E1 — One atomic action
 **Signal**: one observable proof
-{Insert the complete Required understanding block, with a question about E1. Repeat this step
-shape, including Signal and the complete block, for every remaining step.}
+{Repeat this step shape, including Signal, for every remaining step.}
 ## Acceptance criteria
 ## Validation
 {Checks actually run and results; independent review verdict + exact SHA if present, otherwise
@@ -74,28 +71,11 @@ not reviewed; commit evidence separately when known, otherwise uncommitted or un
 **Trace**: `type(scope): imperative sentence`
 ```
 
-## Required understanding block and step checkpoint
+## Step progression
 
-This is the single canonical block. Insert it **in full** after every step's Signal, including a
-conditional integration proof and the final step. Contextualize the question to that step's change
-and purpose without giving away the answer. A link or shortened version is forbidden; keep it
-unchecked in the generated task.
-
-```md
-**Understanding — mandatory stop**
-- [ ] Ask: “{short question inviting the user to restate this step's change and purpose}”
-- Wait for the answer before starting the next step or task. “OK” is insufficient.
-- If the answer misses an essential point, explain only that gap simply, with a concrete example
-  when useful, then ask for a targeted restatement and wait again.
-- Check only after a correct restatement. On an explicit skip, record “explicitly skipped” without
-  checking the box or claiming verified understanding.
-```
-
-At each planned boundary, first observe and briefly report the technical Signal, then ask the
-open restatement question. Assess the essential mechanism and purpose, not exact wording. Do not
-reveal the expected answer before the first attempt. Record technical completion separately from
-understanding (`pending`, `verified`, or `explicitly skipped`) in Validation or a handoff when one
-exists. This checkpoint never replaces tests, review or another required approval.
+Observe and briefly report each step’s technical Signal before proceeding to the next step or
+task. Proceed when the Signal is satisfied, without requiring the user to restate the change or
+validate their understanding. Preserve tests, review and other required approvals.
 
 For feature work, group ANTS steps around one independently verifiable user behavior. Identify
 infrastructure prerequisites explicitly; do not split a coherent behavior into UI-only,
