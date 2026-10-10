@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, lstatSync, existsSync, rmSync, symlinkSync, cpSync, chmodSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, lstatSync, existsSync, rmSync, symlinkSync, cpSync, chmodSync, utimesSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -158,6 +158,36 @@ test('complete profile, conditional reporting integration, reporting add and bra
   add(setup, ['--modules', officialModules.join(',')]);
   assert.equal(state(setup).modules.length, 8);
   assert.match(command('bash', [join(setup.project, '.claude/scripts/workflow-doctor.sh')]), /0 failure/);
+});
+
+test('continuity: handoff instructions are installed and session start selects only the recent current branch', context => {
+  const setup = fixture(context); install(setup, ['--profile', 'continuity']);
+  const handoffSkill = read(setup, '.claude/skills/project-handoff/SKILL.md');
+  assert.equal(read(setup, '.codex/skills/project-handoff/SKILL.md'), handoffSkill);
+  assert.match(handoffSkill, /handoff\/<safe-branch>\.md/);
+  assert.match(handoffSkill, /Resolve the current branch with `branch-router`/);
+  assert.match(read(setup, '.workflow/PROJECT_RULES.md'), /Before ending unfinished work,\s*use `project-handoff`/);
+  assert.match(read(setup, '.claude/skills/project-workflow/SKILL.md'), /`project-handoff` before ending unfinished work/);
+  command('git', ['-C', setup.project, 'switch', '-q', '-c', 'dev/first']);
+  const handoffDirectory = join(setup.project, state(setup).configuration.tasksDirectory, 'handoff');
+  mkdirSync(handoffDirectory, { recursive: true });
+  const firstHandoff = join(handoffDirectory, 'dev-first.md');
+  const secondHandoff = join(handoffDirectory, 'dev-second.md');
+  writeFileSync(firstHandoff, '# First branch handoff\n');
+  writeFileSync(secondHandoff, '# Second branch handoff\n');
+  const hook = join(setup.project, '.claude/hooks/show-handoff.sh');
+  const firstOutput = command('bash', [hook]);
+  assert.match(firstOutput, /handoff\/dev-first\.md/);
+  assert.doesNotMatch(firstOutput, /handoff\/dev-second\.md/);
+  command('git', ['-C', setup.project, 'switch', '-q', '-c', 'dev/second']);
+  const secondOutput = command('bash', [hook]);
+  assert.match(secondOutput, /handoff\/dev-second\.md/);
+  assert.doesNotMatch(secondOutput, /handoff\/dev-first\.md/);
+  const staleDate = new Date(Date.now() - 15 * 86400000);
+  utimesSync(secondHandoff, staleDate, staleDate);
+  assert.doesNotMatch(command('bash', [hook]), /handoff\/dev-second\.md/);
+  assert.equal(readFileSync(firstHandoff, 'utf8'), '# First branch handoff\n');
+  assert.equal(readFileSync(secondHandoff, 'utf8'), '# Second branch handoff\n');
 });
 
 test('discovery never activates a module; conditional rules activate when companion is added', context => {
@@ -320,12 +350,18 @@ test('planned file versus directory collision fails during dry run', context => 
 function updateFixture(context, extra = [], configuration = '') {
   const setup = fixture(context, configuration);
   const source = join(setup.root, 'kit source');
-  command('git', ['clone', '--quiet', '--no-hardlinks', repository, source]);
+  const sourcePaths = ['core', 'templates', 'scripts', 'modules', 'module.sh', 'install.sh', 'VERSION'];
+  mkdirSync(source);
+  for (const path of sourcePaths) cpSync(join(repository, path), join(source, path), { recursive: true });
+  command('git', ['-C', source, 'init', '-q']);
+  command('git', ['-C', source, 'add', '.']);
+  command('git', ['-C', source, '-c', 'user.name=Workflow fixture', '-c', 'user.email=fixture@example.invalid',
+    '-c', 'commit.gpgsign=false', 'commit', '-qm', 'Fixture baseline']);
   const workflow = join(source, 'core/skills/project-workflow/SKILL.md');
   writeFileSync(workflow, '---\nname: project-workflow\ndescription: Previous fixture router.\n---\n\nPrevious fixture route.\n');
   command('bash', [join(source, 'install.sh'), '--target', setup.project, '--user-root', setup.user,
     '--non-interactive', '--config', setup.config, ...extra]);
-  for (const path of ['core', 'templates', 'scripts', 'modules', 'module.sh', 'VERSION']) cpSync(join(repository, path), join(source, path), { recursive: true });
+  for (const path of sourcePaths) cpSync(join(repository, path), join(source, path), { recursive: true });
   const taskRule = join(source, 'modules/tasks/rules/main.md');
   writeFileSync(taskRule, readFileSync(taskRule, 'utf8') + '\nUpdated fixture task rule.\n');
   const antsSkill = join(source, 'modules/tasks/skills/ants/SKILL.md');
