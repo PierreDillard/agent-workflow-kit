@@ -102,6 +102,21 @@ bash module.sh add --target /path/to/my-project --modules reporting --dry-run
 bash module.sh add --target /path/to/my-project --modules reporting
 ```
 
+## Update an existing installation
+
+From the kit checkout you want to deliver:
+
+```bash
+bash module.sh update --target /path/to/my-project --dry-run
+# Review the differences, then use the exact fingerprint printed by the preview.
+bash module.sh update --target /path/to/my-project --expect-plan PLAN_FINGERPRINT
+```
+
+The update preserves your selected modules, tasks, editable notes and local project rules.
+It refuses conflicting managed files and stale plans. Source identity includes the full Git SHA
+and a package fingerprint for uncommitted content. See [the update contract](docs/modules.md#update-an-installed-kit)
+for source requirements, older inventories and recovery limits.
+
 ## Make it your own
 
 Each project can have its own modules, task directory, verification commands, and branch rules.
@@ -134,7 +149,7 @@ See the [publication checklist](PUBLISHING.md).
 - Some skills are also exported to your user directories by default. Set `INSTALL_GLOBAL_SKILLS=false` in your configuration to keep them local to the project.
 - A skill available at user level does not activate a project module on its own.
 - Managed files and Codex mirrors are checked by the kit. Customize sources before installation; tasks, notes, and configurations marked as editable can change afterward.
-- Automatic module upgrades and removal are not supported yet.
+- Explicit kit updates are available; module removal and automatic migrations are not supported.
 - Quality requires an independent review before an authorized merge into the default branch. Reporting never publishes reports automatically.
 
 To check an installation's files and modules without modifying them:

@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, lstatSync, existsSync, rmSync, symlinkSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, lstatSync, existsSync, rmSync, symlinkSync, cpSync, chmodSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { installOrAdd } from '../templates/project/.workflow/runtime/manage.mjs';
+import { updateKit } from '../templates/project/.workflow/runtime/update.mjs';
 import { loadCatalog, officialModules } from '../templates/project/.workflow/runtime/catalog.mjs';
 
 const repository = resolve(new URL('..', import.meta.url).pathname);
@@ -314,4 +315,190 @@ test('planned file versus directory collision fails during dry run', context => 
   const before = snapshot(setup.project);
   assert.match(add(setup, ['--module', source, '--dry-run'], false), /destination conflict/);
   assert.deepEqual(snapshot(setup.project), before);
+});
+
+function updateFixture(context, extra = [], configuration = '') {
+  const setup = fixture(context, configuration);
+  const source = join(setup.root, 'kit source');
+  command('git', ['clone', '--quiet', '--no-hardlinks', repository, source]);
+  const workflow = join(source, 'core/skills/project-workflow/SKILL.md');
+  writeFileSync(workflow, '---\nname: project-workflow\ndescription: Previous fixture router.\n---\n\nPrevious fixture route.\n');
+  command('bash', [join(source, 'install.sh'), '--target', setup.project, '--user-root', setup.user,
+    '--non-interactive', '--config', setup.config, ...extra]);
+  for (const path of ['core', 'templates', 'scripts', 'modules', 'module.sh', 'VERSION']) cpSync(join(repository, path), join(source, path), { recursive: true });
+  const taskRule = join(source, 'modules/tasks/rules/main.md');
+  writeFileSync(taskRule, readFileSync(taskRule, 'utf8') + '\nUpdated fixture task rule.\n');
+  const antsSkill = join(source, 'modules/tasks/skills/ants/SKILL.md');
+  writeFileSync(antsSkill, readFileSync(antsSkill, 'utf8') + '\nCandidate fixture ANTS guidance.\n');
+  return { ...setup, source };
+}
+
+function update(setup, extra = [], expectedSuccess = true) {
+  return command('bash', [join(setup.source, 'module.sh'), 'update', '--target', setup.project, ...extra], expectedSuccess);
+}
+function preview(setup) {
+  const output = update(setup, ['--dry-run']);
+  const match = output.match(/^Plan: ([a-f0-9]{64})$/m);
+  assert.ok(match, output);
+  return { output, plan: match[1] };
+}
+function updateOptions(setup) {
+  return { target: setup.project, kitRoot: setup.source, catalogs: [join(setup.source, 'modules')], sources: [], settings: {} };
+}
+
+for (const [profile, extra, configuration] of [
+  ['minimal', ['--profile', 'minimal'], ''],
+  ['continuity', ['--profile', 'continuity'], ''],
+  ['quality', ['--modules', 'tasks,memory,quality'], ''],
+  ['quality with exports', ['--modules', 'tasks,memory,quality'], 'INSTALL_GLOBAL_SKILLS=true\n'],
+]) test(`update ${profile}: real source and module diff, preserved local data, mirrors, doctor and idempotence`, context => {
+  const setup = updateFixture(context, extra, configuration);
+  const initial = state(setup);
+  const guidance = read(setup, 'AGENTS.md') + '\nLocal policy: an independent review is required before merging.\n';
+  writeFileSync(join(setup.project, 'AGENTS.md'), guidance);
+  writeFileSync(join(setup.project, 'CLAUDE.md'), guidance);
+  writeFileSync(join(setup.project, initial.configuration.tasksDirectory, 'PROJECT_MEMORY.md'), '# My edited memory\n');
+  mkdirSync(join(setup.project, '.workflow/local'), { recursive: true });
+  writeFileSync(join(setup.project, '.workflow/local/policy.md'), 'Preserve this local policy.\n');
+  const localArtifacts = [
+    initial.configuration.tasksDirectory + '/todo/local-effort/01-task.md',
+    initial.configuration.tasksDirectory + '/handoff/dev-local.md',
+  ];
+  for (const path of localArtifacts) {
+    mkdirSync(resolve(setup.project, path, '..'), { recursive: true });
+    writeFileSync(join(setup.project, path), 'Local user evidence: do not reset.\n');
+  }
+  const before = snapshot(setup.project), userBefore = snapshot(setup.user);
+  const { output, plan } = preview(setup);
+  assert.match(output, /Installed source: unknown/);
+  assert.match(output, /Candidate source: .*"revision":"[a-f0-9]{40}".*"dirty":true/);
+  assert.match(output, /DIFF project:\.claude\/skills\/project-workflow\/SKILL.md/);
+  assert.match(output, /Updated fixture task rule/);
+  assert.deepEqual(snapshot(setup.project), before);
+  assert.deepEqual(snapshot(setup.user), userBefore);
+  update(setup, ['--expect-plan', plan]);
+  const after = state(setup);
+  assert.deepEqual(after.selected, initial.selected);
+  assert.deepEqual(after.configuration, initial.configuration);
+  assert.deepEqual(new Set(after.modules.map(module => module.id)), new Set(initial.modules.map(module => module.id)));
+  assert.equal(read(setup, 'AGENTS.md'), guidance);
+  assert.equal(read(setup, 'CLAUDE.md'), guidance);
+  for (const path of ['.workflow-kit.env', '.workflow/branch-policy.md', '.workflow/local/policy.md', initial.configuration.tasksDirectory + '/PROJECT_MEMORY.md', ...localArtifacts]) {
+    assert.equal(snapshot(setup.project)[path], before[path], path);
+  }
+  assert.equal(read(setup, '.claude/skills/project-workflow/SKILL.md'), readFileSync(join(repository, 'core/skills/project-workflow/SKILL.md'), 'utf8'));
+  assert.equal(read(setup, '.codex/skills/project-workflow/SKILL.md'), read(setup, '.claude/skills/project-workflow/SKILL.md'));
+  assert.match(read(setup, '.workflow/PROJECT_RULES.md'), /Updated fixture task rule/);
+  if (initial.configuration.installGlobalSkills) {
+    for (const client of ['.claude', '.codex']) {
+      assert.equal(readFileSync(join(setup.user, client, 'skills/ants/SKILL.md'), 'utf8'), read(setup, client + '/skills/ants/SKILL.md'));
+      assert.match(read(setup, client + '/skills/ants/SKILL.md'), /Candidate fixture ANTS guidance/);
+    }
+  }
+  assert.match(command('bash', [join(setup.project, '.claude/scripts/workflow-doctor.sh')]), /0 failure/);
+  const updated = snapshot(setup.project), updatedUser = snapshot(setup.user);
+  update(setup, ['--expect-plan', preview(setup).plan]);
+  assert.deepEqual(snapshot(setup.project), updated);
+  assert.deepEqual(snapshot(setup.user), updatedUser);
+});
+
+test('update plan refuses stale source, stale editable target, missing approval and wrong exact revision', context => {
+  const setup = updateFixture(context);
+  let plan = preview(setup).plan;
+  assert.match(update(setup, [], false), /approval missing or stale/);
+  assert.match(update(setup, ['--dry-run', '--revision', '0'.repeat(40)], false), /exact checked-out full SHA/);
+  writeFileSync(join(setup.project, 'AGENTS.md'), read(setup, 'AGENTS.md') + '\nConcurrent user edit\n');
+  let before = snapshot(setup.project);
+  assert.match(update(setup, ['--expect-plan', plan], false), /approval missing or stale/);
+  assert.deepEqual(snapshot(setup.project), before);
+  plan = preview(setup).plan;
+  const workflow = join(setup.source, 'core/skills/project-workflow/SKILL.md');
+  writeFileSync(workflow, readFileSync(workflow, 'utf8') + '\nConcurrent source edit\n');
+  before = snapshot(setup.project);
+  assert.match(update(setup, ['--expect-plan', plan], false), /approval missing or stale/);
+  assert.deepEqual(snapshot(setup.project), before);
+});
+
+for (const scenario of ['managed edit', 'user collision', 'removed file', 'dependency', 'downgrade', 'global divergence', 'unknown lineage', 'incompatible dependency', 'lock', 'selection change', 'missing source']) {
+  test(`update rejects ${scenario} without mutation`, context => {
+    const setup = updateFixture(context, ['--profile', 'minimal'], scenario === 'global divergence' ? 'INSTALL_GLOBAL_SKILLS=true\n' : '');
+    let expected;
+    if (scenario === 'managed edit') {
+      writeFileSync(join(setup.project, '.claude/skills/project-workflow/SKILL.md'), 'User changed managed skill');
+      expected = /Managed file changed/;
+    } else if (scenario === 'user collision') {
+      writeFileSync(join(setup.source, 'core/skills/project-workflow/local.md'), 'Package asset');
+      writeFileSync(join(setup.project, '.claude/skills/project-workflow/local.md'), 'User asset');
+      expected = /Collision/;
+    } else if (scenario === 'removed file') {
+      rmSync(join(setup.source, 'core/skills/branch-router/SKILL.md'));
+      expected = /Managed file removal unsupported/;
+    } else if (scenario === 'dependency' || scenario === 'downgrade') {
+      const path = join(setup.source, 'modules/tasks/module.json');
+      const manifest = JSON.parse(readFileSync(path));
+      if (scenario === 'dependency') manifest.requires = { reporting: '*' };
+      else manifest.version = '0.9.0';
+      writeFileSync(path, JSON.stringify(manifest));
+      expected = scenario === 'dependency' ? /would change installed modules/ : /downgrade refused/;
+    } else if (scenario === 'global divergence') {
+      writeFileSync(join(setup.user, '.claude/skills/ants/SKILL.md'), 'Divergent user export');
+      expected = /Managed file changed/;
+    } else if (scenario === 'incompatible dependency') {
+      const path = join(setup.source, 'modules/tasks/module.json');
+      const manifest = JSON.parse(readFileSync(path));
+      manifest.requires = { memory: '99.0.0' };
+      writeFileSync(path, JSON.stringify(manifest));
+      expected = /Incompatible version/;
+    } else if (scenario === 'lock') {
+      mkdirSync(join(setup.project, '.workflow-install.lock'));
+      expected = /Another workflow installation is active/;
+    } else if (scenario === 'selection change') {
+      expected = /preserves selection and settings/;
+    } else if (scenario === 'missing source') {
+      rmSync(join(setup.source, 'modules/tasks'), { recursive: true });
+      expected = /Update source missing/;
+    } else {
+      const inventory = state(setup);
+      inventory.source = { revision: '0'.repeat(40), fingerprint: 'unknown', dirty: false };
+      writeFileSync(join(setup.project, '.workflow-kit.json'), JSON.stringify(inventory));
+      expected = /unavailable or not an ancestor/;
+    }
+    const before = snapshot(setup.project), userBefore = snapshot(setup.user);
+    assert.match(update(setup, scenario === 'selection change' ? ['--dry-run', '--modules', 'reporting'] : ['--dry-run'], false), expected);
+    assert.deepEqual(snapshot(setup.project), before);
+    assert.deepEqual(snapshot(setup.user), userBefore);
+  });
+}
+
+test('update rechecks source and target under lock and rolls back injected write failure', context => {
+  const setup = updateFixture(context);
+  const plan = preview(setup).plan;
+  const before = snapshot(setup.project), userBefore = snapshot(setup.user);
+  for (const failurePoint of [1, 3, 'inventory']) {
+    assert.throws(() => updateKit({ ...updateOptions(setup), expectPlan: plan, afterWrite: count => {
+      if (count === failurePoint || (failurePoint === 'inventory' && state(setup).source)) throw new Error('Injected update failure');
+    } }), /Injected update failure/);
+    assert.deepEqual(snapshot(setup.project), before);
+    assert.deepEqual(snapshot(setup.user), userBefore);
+  }
+  const workflow = join(setup.source, 'core/skills/project-workflow/SKILL.md');
+  assert.throws(() => updateKit({ ...updateOptions(setup), expectPlan: plan, beforeApply: () => writeFileSync(workflow, readFileSync(workflow, 'utf8') + '\nLate edit\n') }), /Concurrent source change/);
+  assert.deepEqual(snapshot(setup.project), before);
+  const nextPlan = preview(setup).plan;
+  assert.throws(() => updateKit({ ...updateOptions(setup), expectPlan: nextPlan, beforeApply: () => writeFileSync(join(setup.project, 'AGENTS.md'), read(setup, 'AGENTS.md') + '\nLate local edit\n') }), /Concurrent change/);
+  assert.equal(read(setup, '.claude/skills/project-workflow/SKILL.md'), Buffer.from(before['.claude/skills/project-workflow/SKILL.md'].split(':').slice(1).join(':'), 'base64').toString());
+  assert.equal(existsSync(join(setup.project, '.workflow-install.lock')), false);
+});
+
+test('update detects concurrent mode change before replacing a later file and restores prior writes', context => {
+  const setup = updateFixture(context);
+  const plan = preview(setup).plan;
+  const mirrorPath = join(setup.project, '.codex/skills/project-workflow/SKILL.md');
+  const previousContent = read(setup, '.claude/skills/project-workflow/SKILL.md');
+  assert.throws(() => updateKit({ ...updateOptions(setup), expectPlan: plan, afterWrite: count => {
+    if (count === 1) chmodSync(mirrorPath, 0o600);
+  } }), /Concurrent change/);
+  assert.equal(read(setup, '.claude/skills/project-workflow/SKILL.md'), previousContent);
+  assert.equal(lstatSync(mirrorPath).mode & 0o777, 0o600);
+  assert.equal(existsSync(join(setup.project, '.workflow-install.lock')), false);
 });

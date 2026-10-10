@@ -107,3 +107,21 @@ export function composeComponents(modules) {
   }
   return Buffer.from('component\tclass\tdependencies\tpurpose\n' + [...components].map(([name, classification]) => `${name}\t${classification}\t-\tModule-managed component`).join('\n') + '\n');
 }
+
+// Shared by first installation and update; project configuration stays outside this package.
+export function materializeCore(kitRoot) {
+  const entries = [];
+  const sources = [
+    ['core/skills', '.claude/skills'], ['core/scripts', '.claude/scripts'], ['core/hooks', '.claude/hooks'],
+    ['templates/project/.workflow/runtime', '.workflow/runtime'],
+    ['templates/project/.workflow/base-rules.md', '.workflow/base-rules.md'],
+    ['templates/project/.claude/settings.json', '.claude/settings.json'],
+    ['templates/project/.codex/hooks.json', '.codex/hooks.json'],
+  ];
+  for (const [source, target] of sources) for (const file of readTree(kitRoot, source)) {
+    const path = file.path === source ? target : `${target}/${file.path.slice(source.length + 1)}`;
+    entries.push({ root: 'project', path, content: file.content, mode: file.mode, owner: 'core', editable: false });
+    if (path.startsWith('.claude/skills/')) entries.push({ root: 'project', path: path.replace('.claude/', '.codex/'), content: file.content, mode: file.mode, owner: 'core', editable: false });
+  }
+  return entries;
+}

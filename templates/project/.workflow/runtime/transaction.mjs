@@ -7,9 +7,9 @@ import { safePath, digest } from './paths.mjs';
 export function applyPlan(entries, roots, options = {}) {
   const lockPath = safePath(roots.project, '.workflow-install.lock');
   if (existsSync(lockPath)) throw new Error('Another workflow installation is active; inspect .workflow-install.lock');
-  if (options.dryRun) return applyUnlockedPlan(entries, roots, options);
+  if (options.dryRun) { options.beforeApply?.(); return applyUnlockedPlan(entries, roots, options); }
   mkdirSync(lockPath);
-  try { return applyUnlockedPlan(entries, roots, options); }
+  try { options.beforeApply?.(); return applyUnlockedPlan(entries, roots, options); }
   finally { rmdirSync(lockPath); }
 }
 
@@ -54,7 +54,8 @@ function applyUnlockedPlan(entries, roots, { dryRun = false, afterWrite = () => 
       safePath(roots[change.root], change.path);
       const exists = existsSync(change.destination);
       if ((change.original === null && exists) || (change.original !== null && (!exists ||
-          !readFileSync(change.destination).equals(change.original)))) throw new Error(`Concurrent change: ${change.destination}`);
+          !readFileSync(change.destination).equals(change.original) ||
+          (lstatSync(change.destination).mode & 0o777) !== change.originalMode))) throw new Error(`Concurrent change: ${change.destination}`);
       ensureDirectory(dirname(change.destination));
       const temporaryPath = `${change.destination}.workflow-${process.pid}-${index}`;
       writeFileSync(temporaryPath, readFileSync(join(stagingRoot, String(index))), { flag: 'wx', mode: change.mode });

@@ -93,8 +93,8 @@ A project lock prevents simultaneous kit writes. On a caught write failure, comp
 created directories roll back. A process kill or power loss is not covered by this in-process rollback;
 inspect a leftover `.workflow-install.lock` before retrying. Dry run leaves the target untouched.
 
-Repeating the same module/version/content/settings is a no-op, preserving edited user data. Different
-content under the same ID requires an upgrade, which is not supported. Removal, upgrades, remote
+Repeating the same module/version/content/settings with add is a no-op, preserving edited user data.
+Different content under the same ID requires the explicit update command below. Removal, remote
 registries and automatic migration from the old monolithic inventory are not implemented.
 Changing the user-export destination is not a migration: existing exports must already be present
 at the explicitly selected or WORKFLOW_USER_ROOT-overridden destination.
@@ -105,3 +105,52 @@ Use an isolated Git checkout and a temporary `--user-root`, run installation or 
 then activate and run `.claude/scripts/workflow-doctor.sh`. Check that user data remains unchanged,
 repeating activation is a no-op, and conditional contributions appear only with their companions.
 Run `bash tests/run.sh` for the kit's integration, rollback and reporting tests.
+
+## Update an installed kit
+
+Run the command from the source checkout you intend to deliver, using its runtime rather than
+an older runtime installed in the target. No source is downloaded or substituted automatically.
+
+```bash
+bash module.sh update --target /path/to/project --dry-run
+# Inspect the differences and copy the exact fingerprint printed as "Plan: ...".
+bash module.sh update --target /path/to/project --expect-plan PLAN_FINGERPRINT
+```
+
+Optionally supply `--revision FULL_SHA` on both commands to require that exact checked-out HEAD.
+A branch name, shortened SHA or a different commit is refused. The source identity contains the
+full HEAD SHA, working-tree dirty state and a SHA-256 fingerprint of the delivered package inputs,
+including selected external module assets. Dirty checkout content is identified by that fingerprint;
+HEAD alone is never presented as the delivered revision. External installed modules require their
+source with `--module PATH` or `--catalog DIRECTORY`; discovery does not add them to the selection.
+
+The preview shows source identity, installed module versions, preserved files, content differences
+and file hashes. Binary changes show hashes. A conflict exits unsuccessfully with its path/cause
+before any target mutation. Text diffs are a contiguous replacement block, not a minimal edit script.
+Applying requires the exact preview fingerprint; any relevant source, inventory, managed file or
+editable-file change makes the plan stale. Re-preview after a change. The source and target are
+checked again under the project lock before writes; destination bytes and mode are also checked
+immediately before replacement.
+
+Update preserves selected module IDs, settings, configuration, project/user export destinations,
+AGENTS.md/CLAUDE.md content, branch policy and all existing editable files. Unmanaged tasks, memories,
+handoffs and local policies are not touched. Core files, module-managed non-editable files, both skill
+mirrors, composed rules/components and inventory are updated through the existing transaction.
+New editable template files may be created when unoccupied; existing user data is never reset.
+Adding a required module, removing a managed file, changing ownership/editability/settings or
+relocating exports requires an explicit migration and is refused. Numeric version downgrades and
+ambiguous version transitions are refused. An installed known source SHA must be available and an
+ancestor of the candidate SHA; otherwise the update is refused.
+
+Old schema-1 inventories without source provenance are supported: existing hashes/modes still have
+to match, but history and upgrade direction are reported as unknown. Acceptance of their exact plan
+records the delivered source without inventing an old revision. This does not establish compatibility
+with every historical installation; extra managed files requiring removal are refused as migrations.
+
+Changed managed files or divergent global exports are conflicts, not files to overwrite forcibly.
+After update, run `.claude/scripts/workflow-doctor.sh` and the project's relevant checks. The doctor
+verifies installation integrity; it does not prove native-agent routing or application behavior.
+Repeating an unchanged update preserves all bytes. Caught write errors roll back the transaction;
+power loss/process kill is not covered. Inspect a leftover `.workflow-install.lock` and the target
+inventory/files before retrying after such an interruption. No Git operation, hook, application task
+or external publication is performed by update.

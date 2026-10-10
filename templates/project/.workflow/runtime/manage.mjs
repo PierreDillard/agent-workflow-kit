@@ -1,9 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { digest, readTree, safePath } from './paths.mjs';
+import { digest, safePath } from './paths.mjs';
 import { loadCatalog, resolveModules, officialModules } from './catalog.mjs';
-import { materializeModule, composeRules, composeComponents } from './compose.mjs';
+import { materializeModule, materializeCore, composeRules, composeComponents } from './compose.mjs';
 import { loadState, checkState, checkPrecommit } from './doctor.mjs';
 import { applyPlan } from './transaction.mjs';
 
@@ -52,7 +52,7 @@ export function installOrAdd(options) {
         if (!source) throw new Error(`Source required to verify installed module: ${manifest.id}`);
         const savedSettings = Object.fromEntries(Object.entries(installed.settings).map(([key, value]) => [`${manifest.id}.${key}`, value]));
         const candidate = materializeModule(source, configuration, { ...savedSettings, ...options.settings });
-        if (candidate.module.fingerprint !== installed.fingerprint) throw new Error(`Module already installed with different content or configuration: ${manifest.id}; upgrades are not supported`);
+        if (candidate.module.fingerprint !== installed.fingerprint) throw new Error(`Module already installed with different content or configuration: ${manifest.id}; use module.sh update with an explicit source plan`);
       }
       modules.push(installed);
     } else {
@@ -62,18 +62,7 @@ export function installOrAdd(options) {
     }
   }
   if (!previous) {
-    const coreSources = [
-      ['core/skills', '.claude/skills'], ['core/scripts', '.claude/scripts'], ['core/hooks', '.claude/hooks'],
-      ['templates/project/.workflow/runtime', '.workflow/runtime'],
-      ['templates/project/.workflow/base-rules.md', '.workflow/base-rules.md'],
-      ['templates/project/.claude/settings.json', '.claude/settings.json'],
-      ['templates/project/.codex/hooks.json', '.codex/hooks.json'],
-    ];
-    for (const [source, target] of coreSources) for (const file of readTree(options.kitRoot, source)) {
-      const path = file.path === source ? target : `${target}/${file.path.slice(source.length + 1)}`;
-      entries.push({ root: 'project', path, content: file.content, mode: file.mode, owner: 'core', editable: false });
-      if (path.startsWith('.claude/skills/')) entries.push({ root: 'project', path: path.replace('.claude/', '.codex/'), content: file.content, mode: file.mode, owner: 'core', editable: false });
-    }
+    entries.push(...materializeCore(options.kitRoot));
     const shellValues = { ...options.shellValues, WORKFLOW_USER_ROOT: userRoot };
     entries.push({ root: 'project', path: '.workflow-kit.env', content: Buffer.from(Object.entries(shellValues).map(([key, value]) =>
       key === 'WORKFLOW_USER_ROOT' ? `WORKFLOW_USER_ROOT=\${WORKFLOW_USER_ROOT:-${quoteShell(value)}}` : `${key}=${quoteShell(value)}`).join('\n') + '\n'), mode: 0o644, owner: 'core', editable: false });
