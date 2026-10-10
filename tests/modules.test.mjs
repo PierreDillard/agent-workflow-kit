@@ -84,6 +84,43 @@ test('minimal: selected capabilities only, project context preserved, dry run no
   assert.match(install(setup, [], false), /already installed/);
 });
 
+for (const [profile, selection, modules] of [
+  ['minimal', ['--profile', 'minimal'], ['memory', 'tasks']],
+  ['continuity', ['--profile', 'continuity'], ['memory', 'tasks', 'continuity']],
+  ['quality and bugs', ['--modules', 'tasks,memory,quality,bugs'], ['memory', 'tasks', 'quality', 'bugs']],
+]) test(`project workflow distribution: ${profile}, local policy preserved and optional skills match inventory`, context => {
+  const setup = fixture(context);
+  const policyPath = join(setup.project, 'local-branch-policy.md');
+  const policy = 'Workflow changes stay on the current branch; application changes require a feature branch.\n';
+  const guidance = '# Local project\n\nRead [local policy](local-branch-policy.md) before planning or editing.\n';
+  writeFileSync(policyPath, policy);
+  writeFileSync(join(setup.project, 'AGENTS.md'), guidance);
+  writeFileSync(join(setup.project, 'CLAUDE.md'), guidance);
+  writeFileSync(setup.config, readFileSync(setup.config, 'utf8') + `BRANCH_STRATEGY=custom\nBRANCH_POLICY_FILE=${policyPath}\n`);
+  install(setup, selection);
+  const inventory = state(setup);
+  assert.deepEqual(new Set(inventory.modules.map(module => module.id)), new Set(modules));
+  const source = readFileSync(join(repository, 'core/skills/project-workflow/SKILL.md'), 'utf8');
+  for (const client of ['.claude', '.codex']) {
+    const skillPath = join(client, 'skills/project-workflow/SKILL.md');
+    assert.equal(read(setup, skillPath), source);
+    for (const reference of source.matchAll(/\]\(([^)]+\.md)\)/g)) {
+      assert.equal(existsSync(resolve(setup.project, client, 'skills/project-workflow', reference[1])), true, reference[1]);
+    }
+    for (const moduleId of ['tasks', 'continuity', 'quality', 'bugs']) {
+      const manifest = JSON.parse(readFileSync(join(repository, 'modules', moduleId, 'module.json')));
+      for (const skill of manifest.skills) {
+        assert.equal(existsSync(join(setup.project, client, 'skills', skill.name, 'SKILL.md')), modules.includes(moduleId), `${client}/${skill.name}`);
+      }
+    }
+  }
+  assert.equal(read(setup, 'local-branch-policy.md'), policy);
+  assert.equal(read(setup, '.workflow/branch-policy.md'), policy);
+  assert.ok(read(setup, 'AGENTS.md').startsWith(guidance));
+  assert.ok(read(setup, 'CLAUDE.md').startsWith(guidance));
+  assert.match(command('bash', [join(setup.project, '.claude/scripts/workflow-doctor.sh')]), /0 failure/);
+});
+
 test('external module: added after install, settings, dependencies, mirrors, editable notes and exact repeat', context => {
   const setup = fixture(context); install(setup);
   const source = join(repository, 'examples/modules/project-notes');

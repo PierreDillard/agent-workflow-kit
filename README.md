@@ -35,6 +35,11 @@ Your request → a task → verifiable steps → useful decisions preserved
 Add Continuity to resume work in another session, Quality for more thorough checks,
 or Learning to help you understand the project.
 
+The shared `project-workflow` skill routes questions, audits, planning, bugs, implementation
+and merges to the skills in your installed modules. It preserves local project rules and reports
+missing capabilities. Installation checks verify files and mirrors; they do not prove that an
+assistant followed the route in a session.
+
 ## Quick start
 
 **Prerequisites**: a Git project, one of the agents above, Linux, Bash, Node.js 18+, `rsync`,
