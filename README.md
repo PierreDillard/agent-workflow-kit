@@ -42,29 +42,58 @@ assistant followed the route in a session.
 
 ## Quick start
 
-**Prerequisites**: a Git project, one of the agents above, Linux, Bash, Node.js 18+, `rsync`,
-and standard GNU utilities. macOS and Windows have not been validated yet.
+**Prerequisites**: a Git project, one of the agents above, Node.js 18+ and Git.
+Linux is the tested platform; macOS and Windows have not been validated yet.
 
-Clone the kit and open its directory:
-
-```bash
-git clone https://github.com/PierreDillard/agent-workflow-kit.git
-cd agent-workflow-kit
-```
-
-Then replace `/path/to/my-project` with your project's root directory:
+From your project's root directory:
 
 ```bash
-# Preview the installation without changing the project
-bash install.sh --target /path/to/my-project --dry-run
-
-# Install Tasks + Memory, the default selection
-bash install.sh --target /path/to/my-project
+npx @pierredillard/agent-workflow-kit init
 ```
 
 Answer the questions about your project, then open your assistant in that project.
 Instructions and skills — specialized guides for the assistant — are prepared for all three
 agents. Hooks are configured for Claude Code and Codex; approve them if your assistant asks.
+
+Preview first with `--dry-run`, or skip the questions with `--yes`:
+
+```bash
+npx @pierredillard/agent-workflow-kit init --dry-run
+npx @pierredillard/agent-workflow-kit init --yes --profile continuity
+```
+
+Until the package is published on npm, the same commands work straight from GitHub:
+`npx github:PierreDillard/agent-workflow-kit init`.
+
+## One directory in your project
+
+Everything the kit installs lives in a single directory, `tasks/` by default:
+
+```text
+my-project/
+├── tasks/                    # your tasks, memory, decisions, reports…
+│   └── .workflow/            # managed by the kit: rules, runtime, scripts, inventory
+├── .claude/                  # skills, settings.json (hook), agents for Claude Code
+├── .codex/                   # skills, hooks.json for Codex
+├── CLAUDE.md                 # your content + a three-line pointer to tasks/.workflow
+└── AGENTS.md                 # same pointer for Codex and Copilot
+```
+
+Claude Code and Codex only discover skills, hooks and agents in `.claude/` and `.codex/`, and read
+`CLAUDE.md`/`AGENTS.md` at the root, so those few entry points stay outside. Inside the project, the
+kit writes nothing else outside `tasks/` (apart from a lock directory that exists only while it writes).
+Some general-purpose skills are also exported to `~/.claude/skills` and `~/.codex/skills`; set
+`INSTALL_GLOBAL_SKILLS=false` to keep them project-local. Choose another directory name with
+`--tasks-dir`, for example `--tasks-dir .agent`.
+
+**Versioned or not.** Commit `tasks/` to share the workflow with your team, or keep it personal:
+
+```bash
+npx @pierredillard/agent-workflow-kit init --local
+```
+
+`--local` adds `/tasks/` to `.git/info/exclude`, a per-clone exclusion that is never committed; the
+project's `.gitignore` is not touched. Hooks stay silent in clones that do not have the directory.
 
 ## Your kit, your modules
 
@@ -85,37 +114,41 @@ For a custom first installation:
 
 ```bash
 # Learning only
-bash install.sh --target /path/to/my-project --modules learning
+npx @pierredillard/agent-workflow-kit init --modules learning
 
 # Tasks, Memory, and Continuity
-bash install.sh --target /path/to/my-project --modules tasks,memory,continuity
+npx @pierredillard/agent-workflow-kit init --modules tasks,memory,continuity
 ```
 
-These selections replace the default. Some modules require dependencies, which the installer
-displays; every selection includes a shared core. The `minimal`, `continuity`, and `complete`
-profiles also provide ready-made selections.
+These selections replace the default (Tasks + Memory). Some modules require dependencies, which the
+installer displays; every selection includes a shared core. The `minimal`, `continuity`, and
+`complete` profiles also provide ready-made selections.
 
 To add a module to a project where the kit is already installed:
 
 ```bash
-bash module.sh add --target /path/to/my-project --modules reporting --dry-run
-bash module.sh add --target /path/to/my-project --modules reporting
+npx @pierredillard/agent-workflow-kit add reporting --dry-run
+npx @pierredillard/agent-workflow-kit add reporting
 ```
 
 ## Update an existing installation
 
-From the kit checkout you want to deliver:
-
 ```bash
-bash module.sh update --target /path/to/my-project --dry-run
-# Review the differences, then use the exact fingerprint printed by the preview.
-bash module.sh update --target /path/to/my-project --expect-plan PLAN_FINGERPRINT
+npx @pierredillard/agent-workflow-kit@latest update
 ```
 
+The command shows what will change, asks for confirmation, then applies exactly that plan.
+`--yes` applies without asking (for scripts); `--dry-run` prints the full diff and a plan
+fingerprint that `--expect-plan` can apply later.
+
 The update preserves your selected modules, tasks, editable notes and local project rules.
-It refuses conflicting managed files and stale plans. Source identity includes the full Git SHA
-and a package fingerprint for uncommitted content. See [the update contract](docs/modules.md#update-an-installed-kit)
-for source requirements, older inventories and recovery limits.
+It refuses conflicting managed files and stale plans. Updates are never applied silently: they
+rewrite the instructions your assistant follows, so the plan is always shown first.
+See [the update contract](docs/modules.md#update-an-installed-kit) for details and recovery limits.
+
+**Coming from 0.1?** Those installations keep the kit at the project root
+(`.workflow/`, `.workflow-kit.*`, `.claude/scripts/`, `.claude/hooks/`). The same `update` command
+moves them into `tasks/.workflow/` and removes the old managed files; files you added there stay.
 
 ## Make it your own
 
@@ -123,7 +156,7 @@ Each project can have its own modules, task directory, verification commands, an
 Copy the [example configuration](examples/project.env), adjust the values, then use your file:
 
 ```bash
-bash install.sh --target /path/to/my-project --config my-project.env
+npx @pierredillard/agent-workflow-kit init --config my-project.env
 ```
 
 You can also customize module sources before installation or create your own modules:
@@ -134,9 +167,19 @@ provide a starting point.
 The kit installs into your project without an additional server or online registry.
 Your tasks and notes remain local files. You stay in control of commits, merges, and publishing.
 
+### From a clone of the kit
+
+`install.sh` and `module.sh` remain as wrappers around the same CLI, for checkouts and scripts:
+
+```bash
+git clone https://github.com/PierreDillard/agent-workflow-kit.git
+bash agent-workflow-kit/install.sh --target /path/to/my-project --dry-run
+bash agent-workflow-kit/module.sh update --target /path/to/my-project
+```
+
 ## Project status
 
-**Available to install and distribute as an experimental version: `0.1.0-dev`.**
+**Available to install and distribute as an experimental version: `0.2.0-dev`.**
 
 Local tests and publication archive checks pass. GitHub CI and checks in fresh Claude Code,
 Codex, and Copilot sessions still need to be validated before declaring the first release ready.
@@ -155,7 +198,8 @@ See the [publication checklist](PUBLISHING.md).
 To check an installation's files and modules without modifying them:
 
 ```bash
-bash /path/to/my-project/.claude/scripts/workflow-doctor.sh
+npx @pierredillard/agent-workflow-kit doctor
+# or, without the package: bash tasks/.workflow/scripts/workflow-doctor.sh
 ```
 
 To check the kit and the package staged in Git:

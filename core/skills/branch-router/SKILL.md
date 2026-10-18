@@ -5,13 +5,13 @@ description: Resolve the current Git branch, its task workspace, merge direction
 
 # Branch Router
 
-Read `.workflow-kit.env`, then inspect `git status -sb` and `git branch --show-current`.
+Read `{{KIT_DIR}}/kit.env`, then inspect `git status -sb` and `git branch --show-current`.
 
 ## Branch-owned context
 
-Only for the corresponding modules listed in `.workflow/PROJECT_RULES.md`, for branch `<branch>`:
+Only for the corresponding modules listed in `{{KIT_DIR}}/PROJECT_RULES.md`, for branch `<branch>`:
 
-- task index and contract: resolve through `.workflow/PROJECT_RULES.md` (§ Task placement);
+- task index and contract: resolve through `{{KIT_DIR}}/PROJECT_RULES.md` (§ Task placement);
 - branch memory: `${TASKS_DIR}/memory/<branch-with-slashes-as-dashes>.md`;
 - handoff: `${TASKS_DIR}/handoff/<branch-with-slashes-as-dashes>.md`.
 
@@ -25,7 +25,7 @@ Read the index first. Load individual tasks or memory themes only when the curre
 - `trunk`: work on `DEFAULT_BRANCH` only when the user authorizes it.
 - `flat`: feature branches derive from and merge directly into `DEFAULT_BRANCH`; propose
   `FEATURE_BRANCH_PREFIX<slug>` when the current branch does not match the change.
-- `custom`: read `.workflow/branch-policy.md`; it is the only branch-policy authority.
+- `custom`: read `{{KIT_DIR}}/branch-policy.md`; it is the only branch-policy authority.
 
 Classify by change intent, not merely by the file touched. Mixed intents become separate atomic
 changes. Never create, switch, merge, commit or push unless the user explicitly requests it.

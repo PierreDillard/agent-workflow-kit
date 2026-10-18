@@ -34,7 +34,7 @@ import { pathToFileURL } from 'node:url';
 import { join } from 'node:path';
 const root = process.argv[2];
 const tasks = 'planning notes/tasks';
-const statusModule = await import(pathToFileURL(join(root, '.claude/scripts/weekly-report-status.mjs')));
+const statusModule = await import(pathToFileURL(join(root, tasks, '.workflow/scripts/weekly-report-status.mjs')));
 const configPath = join(root, tasks, 'reports/config.json');
 const config = JSON.parse(readFileSync(configPath));
 assert.equal(config.timezone, 'America/Montreal');
@@ -56,14 +56,15 @@ for (const filename of ['.claude/settings.json', '.codex/hooks.json']) {
   assert.ok(!output.includes('Private note'), filename);
 }
 assert.equal(readFileSync(notebookPath, 'utf8'), notebook);
-assert.equal(JSON.parse(execFileSync('bash', [join(root, '.claude/scripts/weekly-report-status.sh')],
+assert.equal(JSON.parse(execFileSync('bash', [join(root, tasks, '.workflow/scripts/weekly-report-status.sh')],
   { cwd: '/', encoding: 'utf8' })).week, week);
 NODE
-WORKFLOW_PROJECT_ROOT="$project_path" bash "$project_path/.claude/scripts/workflow-doctor.sh"
-WORKFLOW_USER_ROOT="$fixture_root/new user" bash -c '. "$1/.workflow-kit.env"; [ "$WORKFLOW_USER_ROOT" = "$2" ]' \
-  bash "$project_path" "$fixture_root/new user"
-env -u WORKFLOW_USER_ROOT bash -c '. "$1/.workflow-kit.env"; [ "$WORKFLOW_USER_ROOT" = "$2" ]' \
-  bash "$project_path" "$user_path"
+kit_path="$project_path/planning notes/tasks/.workflow"
+bash "$kit_path/scripts/workflow-doctor.sh"
+WORKFLOW_USER_ROOT="$fixture_root/new user" bash -c '. "$1/kit.env"; [ "$WORKFLOW_USER_ROOT" = "$2" ]' \
+  bash "$kit_path" "$fixture_root/new user"
+env -u WORKFLOW_USER_ROOT bash -c '. "$1/kit.env"; [ "$WORKFLOW_USER_ROOT" = "$2" ]' \
+  bash "$kit_path" "$user_path"
 
 # Existing destination hooks must survive refusal, including dry-run mode.
 collision_path="$fixture_root/existing workflow"
@@ -78,7 +79,13 @@ for mode in --dry-run ''; do
   fi
   grep -q 'Collision:' "$fixture_root/collision.log"
   cmp "$collision_path/.codex/hooks.json" "$fixture_root/original-hooks.json"
-  [ ! -e "$collision_path/.workflow-kit.json" ]
+  [ ! -e "$collision_path/planning notes" ]
   [ ! -e "$collision_path/.claude" ]
 done
-printf '%s\n' 'ok    reporting: custom task root, relocation, spaces, both hooks, read-only'
+# An unversioned kit directory is absent from a teammate's clone: both hooks must stay silent.
+rm -rf "$project_path/planning notes"
+for settings in "$project_path/.claude/settings.json" "$project_path/.codex/hooks.json"; do
+  hook_command="$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1])).hooks.SessionStart[0].hooks[0].command)' "$settings")"
+  [ -z "$(cd "$project_path" && CLAUDE_PROJECT_DIR="$project_path" bash -c "$hook_command")" ]
+done
+printf '%s\n' 'ok    reporting: custom task root, relocation, spaces, both hooks, read-only, absent kit directory'

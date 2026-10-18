@@ -16,6 +16,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          # Full history: the migration test installs the last 0.1 revision.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -23,7 +25,8 @@ jobs:
 
       - name: Verify required tools
         run: |
-          command -v bash git node rsync awk sed sort tac find
+          # rsync is only needed by the 0.1 installer used in the migration test.
+          command -v bash git node npm tar rsync
           node --version
 
       - name: Run workflow-kit tests
@@ -31,3 +34,6 @@ jobs:
 
       - name: Verify publication archive
         run: bash tests/publication-candidate.sh
+
+      - name: Verify npm package contents
+        run: npm pack --dry-run

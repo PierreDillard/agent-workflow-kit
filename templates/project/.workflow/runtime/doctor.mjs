@@ -3,11 +3,15 @@ import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { digest, safePath, readJson } from './paths.mjs';
 import { resolveModules } from './catalog.mjs';
+import { locateInstallation } from './layout.mjs';
 
 export function loadState(projectRoot) {
-  const state = readJson(safePath(projectRoot, '.workflow-kit.json'));
+  const layout = locateInstallation(projectRoot);
+  if (!layout) throw new Error('Workflow kit is not installed in this project');
+  const state = readJson(safePath(projectRoot, layout.inventory));
   if (state.schemaVersion !== 1 || !Array.isArray(state.modules) || !Array.isArray(state.files)) throw new Error('Installation has no compatible module inventory; explicit migration required');
-  return state;
+  if (!layout.legacy && `${state.configuration?.tasksDirectory}/.workflow` !== layout.kit) throw new Error(`Inventory does not belong to ${layout.kit}`);
+  return { state, layout };
 }
 
 export function checkPrecommit(projectRoot) {
@@ -37,15 +41,16 @@ export function checkState(state, roots) {
 
 export function doctor(projectRoot, userRoot) {
   try {
-    const state = loadState(projectRoot);
+    const { state, layout } = loadState(projectRoot);
     checkState(state, { project: projectRoot, user: userRoot ?? state.configuration.userRoot });
     console.log(`ok    ${state.modules.length} modules; managed files, mirrors, dependencies and declarative checks`);
+    if (layout.legacy) console.log('warn  0.1 root-level layout; run the kit update to move it into the task directory');
     console.log('workflow-doctor: 0 failure(s), 0 warning(s)');
   } catch (error) { console.error(`FAIL  ${error.message}\nworkflow-doctor: 1 failure(s)`); process.exitCode = 1; }
 }
 
 export function sessionStart(projectRoot) {
-  const state = loadState(projectRoot);
+  const { state } = loadState(projectRoot);
   const moduleIds = new Set(state.modules.map(module => module.id));
   let branch = '';
   try { branch = execFileSync('git', ['-C', projectRoot, 'branch', '--show-current'], { encoding: 'utf8' }).trim(); } catch { /* Detached/non-Git staging has no branch pointers. */ }

@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/show-handoff.sh\"",
+            "command": "hook=\"${CLAUDE_PROJECT_DIR}/{{KIT_DIR}}/hooks/show-handoff.sh\"; [ ! -f \"$hook\" ] || bash \"$hook\"",
             "timeout": 10
           }
         ]

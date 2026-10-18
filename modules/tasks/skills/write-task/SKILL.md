@@ -6,7 +6,7 @@ description: Create or restructure ANTS task files at the resolved effort locati
 # Write Task
 
 Use `branch-router` to identify the target implementation branch when known. Resolve the task
-location using [Task placement](../../../.workflow/PROJECT_RULES.md#task-placement).
+location using [Task placement](<../../../{{KIT_DIR}}/PROJECT_RULES.md#task-placement>).
 
 Create `README.md` as a derived navigation index before the first task. Read only the index and
 the selected task, never every task body.

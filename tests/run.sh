@@ -2,6 +2,7 @@
 set -euo pipefail
 kit_root="$(cd "$(dirname "$0")/.." && pwd)"
 bash -n "$kit_root/install.sh" "$kit_root/module.sh" "$kit_root/core/scripts/"*.sh "$kit_root/core/hooks/"*.sh
+node --check "$kit_root/bin/agent-workflow-kit.mjs"
 node --test "$kit_root/tests/modules.test.mjs"
 node "$kit_root/tests/weekly-report-status.test.mjs"
 bash "$kit_root/tests/reporting-portability.sh"

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { posix } from 'node:path';
 import { digest, readTree, safePath } from './paths.mjs';
+import { layoutFor } from './layout.mjs';
 
 const reservedTargets = ['.workflow', '.git', '.workflow-kit.env', '.workflow-kit.json', 'CLAUDE.md', 'AGENTS.md', '.claude/settings.json', '.codex/hooks.json'];
 
@@ -24,10 +25,15 @@ function render(content, variables, path) {
   return Buffer.from(replace(new TextDecoder('utf-8', { fatal: true }).decode(content)));
 }
 
+function templateVariables(configuration) {
+  return { TASKS_DIR: configuration.tasksDirectory, KIT_DIR: layoutFor(configuration.tasksDirectory).kit, REPORT_TIMEZONE: configuration.reportTimezone };
+}
+
 export function materializeModule(source, configuration, settings) {
   const manifest = source.manifest;
   const entries = [];
-  const variables = { TASKS_DIR: configuration.tasksDirectory, REPORT_TIMEZONE: configuration.reportTimezone };
+  const layout = layoutFor(configuration.tasksDirectory);
+  const variables = templateVariables(configuration);
   const moduleSettings = { ...(manifest.config ?? {}) };
   for (const [key, value] of Object.entries(settings)) {
     if (!key.startsWith(`${manifest.id}.`)) continue;
@@ -61,9 +67,10 @@ export function materializeModule(source, configuration, settings) {
     const files = readTree(source.directory, mapping.source);
     const isSingleFile = files.length === 1 && files[0].path === mapping.source;
     const target = expandPath(mapping.target);
-    if (reservedTargets.some(reserved => target === reserved || target.startsWith(`${reserved}/`)) ||
-        target.startsWith('.claude/skills/') || target.startsWith('.codex/skills/')) throw new Error(`Reserved target: ${target}`);
-    if (!(target.startsWith(`${configuration.tasksDirectory}/`) || target.startsWith('.claude/scripts/') ||
+    const isKitScript = target.startsWith(`${layout.scripts}/`);
+    if (!isKitScript && ([...reservedTargets, layout.kit].some(reserved => target === reserved || target.startsWith(`${reserved}/`)) ||
+        target.startsWith('.claude/skills/') || target.startsWith('.codex/skills/'))) throw new Error(`Reserved target: ${target}`);
+    if (!(isKitScript || target.startsWith(`${configuration.tasksDirectory}/`) ||
           target.startsWith('.claude/agents/'))) throw new Error(`Target outside managed destinations: ${target}`);
     for (const file of files) {
       const destination = isSingleFile ? target : posix.join(target, file.path.slice(mapping.source.length + 1));
@@ -72,7 +79,7 @@ export function materializeModule(source, configuration, settings) {
     }
   }
   const rules = (manifest.rules ?? []).map(rule => {
-    const path = `.workflow/modules/${manifest.id}/rules/${rule.id}.md`;
+    const path = `${layout.kit}/modules/${manifest.id}/rules/${rule.id}.md`;
     addFile({ content: readFileSync(safePath(source.directory, rule.source)), mode: 0o644 }, path);
     return { id: rule.id, path, point: rule.point, when: rule.when ?? [] };
   });
@@ -85,9 +92,9 @@ export function materializeModule(source, configuration, settings) {
     components, settings: moduleSettings, fingerprint } };
 }
 
-export function composeRules(modules, getContent) {
+export function composeRules(modules, getContent, layout) {
   const activeIds = new Set(modules.map(module => module.id));
-  const base = getContent('.workflow/base-rules.md').toString();
+  const base = getContent(layout.baseRules).toString();
   const sections = [base, `\n## Installed modules\n\n${modules.map(module => `${module.id}@${module.version}`).join(', ')}\n`];
   for (const point of ['session-start', 'task-validation', 'before-handoff']) {
     const rules = modules.flatMap(module => module.rules.filter(rule => rule.point === point &&
@@ -109,19 +116,23 @@ export function composeComponents(modules) {
 }
 
 // Shared by first installation and update; project configuration stays outside this package.
-export function materializeCore(kitRoot) {
+export function materializeCore(kitRoot, configuration) {
+  const layout = layoutFor(configuration.tasksDirectory);
+  const variables = templateVariables(configuration);
   const entries = [];
+  // The runtime is copied byte for byte: its sources contain template syntax of their own.
   const sources = [
-    ['core/skills', '.claude/skills'], ['core/scripts', '.claude/scripts'], ['core/hooks', '.claude/hooks'],
-    ['templates/project/.workflow/runtime', '.workflow/runtime'],
-    ['templates/project/.workflow/base-rules.md', '.workflow/base-rules.md'],
-    ['templates/project/.claude/settings.json', '.claude/settings.json'],
-    ['templates/project/.codex/hooks.json', '.codex/hooks.json'],
+    ['core/skills', '.claude/skills', true], ['core/scripts', layout.scripts, false], ['core/hooks', layout.hooks, false],
+    ['templates/project/.workflow/runtime', layout.runtime, false],
+    ['templates/project/.workflow/base-rules.md', layout.baseRules, true],
+    ['templates/project/.claude/settings.json', '.claude/settings.json', true],
+    ['templates/project/.codex/hooks.json', '.codex/hooks.json', true],
   ];
-  for (const [source, target] of sources) for (const file of readTree(kitRoot, source)) {
+  for (const [source, target, rendered] of sources) for (const file of readTree(kitRoot, source)) {
     const path = file.path === source ? target : `${target}/${file.path.slice(source.length + 1)}`;
-    entries.push({ root: 'project', path, content: file.content, mode: file.mode, owner: 'core', editable: false });
-    if (path.startsWith('.claude/skills/')) entries.push({ root: 'project', path: path.replace('.claude/', '.codex/'), content: file.content, mode: file.mode, owner: 'core', editable: false });
+    const content = rendered ? render(file.content, variables, path) : file.content;
+    entries.push({ root: 'project', path, content, mode: file.mode, owner: 'core', editable: false });
+    if (path.startsWith('.claude/skills/')) entries.push({ root: 'project', path: path.replace('.claude/', '.codex/'), content, mode: file.mode, owner: 'core', editable: false });
   }
   return entries;
 }
