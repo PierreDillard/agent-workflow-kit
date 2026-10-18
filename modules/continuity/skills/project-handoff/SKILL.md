@@ -14,7 +14,7 @@ acceptance checks, Validation and authoritative frontmatter, then its derived RE
 files or evidence are missing, state the gap instead of claiming synchronization succeeded.
 
 Before replacing the previous handoff, apply the active before-handoff contributions in
-`.workflow/PROJECT_RULES.md`. With none installed, continue directly.
+`{{KIT_DIR}}/PROJECT_RULES.md`. With none installed, continue directly.
 
 Include date, branch and status, followed by: next focus, verified current state, implementation
 decisions, Git state, relevant files, risks, immediate atomic actions and suggested skills.

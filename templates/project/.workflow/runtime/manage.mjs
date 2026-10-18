@@ -6,11 +6,11 @@ import { loadCatalog, resolveModules, officialModules } from './catalog.mjs';
 import { materializeModule, materializeCore, composeRules, composeComponents } from './compose.mjs';
 import { loadState, checkState, checkPrecommit } from './doctor.mjs';
 import { applyPlan } from './transaction.mjs';
+import { layoutFor, locateInstallation, pointerBlock, validateTasksDirectory } from './layout.mjs';
 
-const pointer = '<!-- workflow-kit:start -->\nWorkflow authority: [.workflow/PROJECT_RULES.md](.workflow/PROJECT_RULES.md).\nRead `.workflow-kit.env` and the installed module rules; load only relevant context.\n<!-- workflow-kit:end -->';
 const quoteShell = value => `'${String(value).replaceAll("'", "'\\''")}'`;
 
-function rootRules(projectRoot, filename, projectName) {
+function rootRules(projectRoot, filename, projectName, pointer) {
   const path = safePath(projectRoot, filename);
   if (existsSync(path)) {
     const content = readFileSync(path);
@@ -25,9 +25,12 @@ export function installOrAdd(options) {
   const gitRoot = execFileSync('git', ['-C', projectRoot, 'rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
   if (gitRoot !== projectRoot) throw new Error('Target must be a Git repository root');
   const isAdding = options.command === 'add';
-  if (!isAdding && existsSync(safePath(projectRoot, '.workflow-kit.json'))) throw new Error('Workflow kit already installed; use module.sh add');
-  const previous = isAdding ? loadState(projectRoot) : null;
+  if (!isAdding && locateInstallation(projectRoot)) throw new Error('Workflow kit already installed; use add or update');
+  const loaded = isAdding ? loadState(projectRoot) : null;
+  if (loaded?.layout.legacy) throw new Error('Installation uses the 0.1 root-level layout; run update first to move it into the task directory');
+  const previous = loaded?.state ?? null;
   const configuration = previous?.configuration ?? options.configuration;
+  const layout = layoutFor(validateTasksDirectory(configuration.tasksDirectory));
   const userRoot = resolve(options.userRoot ?? process.env.WORKFLOW_USER_ROOT ?? configuration.userRoot);
   const roots = { project: projectRoot, user: userRoot };
   if (projectRoot === userRoot || userRoot.startsWith(`${projectRoot}/`) || projectRoot.startsWith(`${userRoot}/.claude/`)) throw new Error('User skill root must not overlap project');
@@ -62,20 +65,20 @@ export function installOrAdd(options) {
     }
   }
   if (!previous) {
-    entries.push(...materializeCore(options.kitRoot));
+    entries.push(...materializeCore(options.kitRoot, configuration));
     const shellValues = { ...options.shellValues, WORKFLOW_USER_ROOT: userRoot };
-    entries.push({ root: 'project', path: '.workflow-kit.env', content: Buffer.from(Object.entries(shellValues).map(([key, value]) =>
+    entries.push({ root: 'project', path: layout.environment, content: Buffer.from(Object.entries(shellValues).map(([key, value]) =>
       key === 'WORKFLOW_USER_ROOT' ? `WORKFLOW_USER_ROOT=\${WORKFLOW_USER_ROOT:-${quoteShell(value)}}` : `${key}=${quoteShell(value)}`).join('\n') + '\n'), mode: 0o644, owner: 'core', editable: false });
     const policy = configuration.branchStrategy === 'custom' ? readFileSync(options.branchPolicy) : Buffer.from(configuration.branchStrategy === 'trunk' ?
       `Work remains on \`${configuration.defaultBranch}\`; no feature branch is required.\n` :
       `Feature branches derive from and merge directly into \`${configuration.defaultBranch}\`; prefix new work with \`${configuration.featureBranchPrefix}\`.\n`);
-    entries.push({ root: 'project', path: '.workflow/branch-policy.md', content: policy, mode: 0o644, owner: 'core', editable: false });
-    for (const filename of ['CLAUDE.md', 'AGENTS.md']) entries.push({ root: 'project', path: filename, ...rootRules(projectRoot, filename, configuration.projectName), mode: 0o644, owner: 'core', editable: true });
+    entries.push({ root: 'project', path: layout.branchPolicy, content: policy, mode: 0o644, owner: 'core', editable: false });
+    for (const filename of ['CLAUDE.md', 'AGENTS.md']) entries.push({ root: 'project', path: filename, ...rootRules(projectRoot, filename, configuration.projectName, pointerBlock(layout)), mode: 0o644, owner: 'core', editable: true });
   }
   const getContent = path => entries.find(entry => entry.root === 'project' && entry.path === path)?.content ?? readFileSync(safePath(projectRoot, path));
   for (const [path, content] of [
-    ['.workflow/PROJECT_RULES.md', composeRules(modules, getContent)],
-    ['.workflow/components.tsv', composeComponents(modules)],
+    [layout.rules, composeRules(modules, getContent, layout)],
+    [layout.components, composeComponents(modules)],
   ]) {
     const prior = previous?.files.find(file => file.root === 'project' && file.path === path);
     entries.push({ root: 'project', path, content, mode: 0o644, owner: 'core', editable: false, ...(prior ? { expected: prior.sha256 } : {}) });
@@ -102,8 +105,8 @@ export function installOrAdd(options) {
       if (check.type === 'timezone') new Intl.DateTimeFormat('en', { timeZone: value.timezone });
     }
   }
-  entries.push({ root: 'project', path: '.workflow-kit.json', content: Buffer.from(JSON.stringify(state, null, 2) + '\n'), mode: 0o644,
-    ...(previous ? { expected: digest(readFileSync(safePath(projectRoot, '.workflow-kit.json'))) } : {}) });
+  entries.push({ root: 'project', path: layout.inventory, content: Buffer.from(JSON.stringify(state, null, 2) + '\n'), mode: 0o644,
+    ...(previous ? { expected: digest(readFileSync(safePath(projectRoot, layout.inventory))) } : {}) });
   console.log(`Requested modules: ${requested.join(', ')}`);
   console.log(`Resolved modules: ${modules.map(module => `${module.id}@${module.version}`).join(', ')}`);
   applyPlan(entries, roots, { dryRun: options.dryRun, afterWrite: options.afterWrite });

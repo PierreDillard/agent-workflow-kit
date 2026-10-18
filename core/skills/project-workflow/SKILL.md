@@ -10,7 +10,7 @@ Router only: select and order existing skills; their procedures remain authorita
 ## 1 — Resolve the project and installed capabilities
 
 Read the applicable AGENTS.md/CLAUDE.md and the local policies they reference, then
-`.workflow-kit.env` and `.workflow/PROJECT_RULES.md`. Use `.workflow-kit.json` for installed
+`{{KIT_DIR}}/kit.env` and `{{KIT_DIR}}/PROJECT_RULES.md`. Use `{{KIT_DIR}}/kit.json` for installed
 module/skill ownership when needed. Preserve local project decisions and the user's scope.
 Available user-global skills or discovered catalogs do not activate project modules.
 

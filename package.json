@@ -1,0 +1,41 @@
+{
+  "name": "@pierredillard/agent-workflow-kit",
+  "version": "0.2.0-dev",
+  "description": "Modular task, memory and quality workflow for Claude Code, Codex and Copilot, installed into a single project directory.",
+  "license": "MIT",
+  "author": "Pierre Dillard",
+  "homepage": "https://github.com/PierreDillard/agent-workflow-kit#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PierreDillard/agent-workflow-kit.git"
+  },
+  "bugs": "https://github.com/PierreDillard/agent-workflow-kit/issues",
+  "keywords": ["claude-code", "codex", "copilot", "agents", "skills", "workflow"],
+  "bin": {
+    "agent-workflow-kit": "bin/agent-workflow-kit.mjs"
+  },
+  "files": [
+    "bin/",
+    "core/",
+    "modules/",
+    "templates/project/.claude/settings.json",
+    "templates/project/.codex/hooks.json",
+    "templates/project/.workflow/base-rules.md",
+    "templates/project/.workflow/runtime/",
+    "examples/",
+    "docs/",
+    "install.sh",
+    "module.sh",
+    "VERSION",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "bash tests/run.sh"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -28,11 +28,11 @@
     },
     {
       "source": "files/weekly-report-status.sh",
-      "target": ".claude/scripts/weekly-report-status.sh"
+      "target": "{{KIT_DIR}}/scripts/weekly-report-status.sh"
     },
     {
       "source": "files/weekly-report-status.mjs",
-      "target": ".claude/scripts/weekly-report-status.mjs"
+      "target": "{{KIT_DIR}}/scripts/weekly-report-status.mjs"
     }
   ],
   "rules": [
@@ -54,7 +54,7 @@
     {
       "id": "reminder",
       "point": "session-start",
-      "path": ".claude/scripts/weekly-report-status.sh",
+      "path": "{{KIT_DIR}}/scripts/weekly-report-status.sh",
       "runner": "bash",
       "args": [
         "--hook"

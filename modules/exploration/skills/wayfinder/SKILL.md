@@ -10,7 +10,7 @@ Use for an initiative too uncertain or large for one `write-task` task. Wayfinde
 it does not implement production changes. When the route becomes clear, hand the result to
 `write-task`.
 
-Resolve the directory using [Task placement](../../../.workflow/PROJECT_RULES.md#task-placement).
+Resolve the directory using [Task placement](<../../../{{KIT_DIR}}/PROJECT_RULES.md#task-placement>).
 The map is its `README.md`, marked on the first line with `<!-- wayfinder:map -->`. It records a
 one- or two-line destination, standing notes, an indexed ticket frontier, dependency order, fog not
 yet specifiable and explicit out-of-scope work.

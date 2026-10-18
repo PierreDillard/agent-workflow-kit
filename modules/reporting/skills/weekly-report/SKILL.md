@@ -7,11 +7,11 @@ description: Préparer les objectifs et le bilan hebdomadaire personnel, consign
 
 ## Entrée et propriétaires
 
-Lire `.workflow-kit.env` pour résoudre `TASKS_DIR` (chemin relatif, pas forcément `tasks`).
+Lire `{{KIT_DIR}}/kit.env` pour résoudre `TASKS_DIR` (chemin relatif, pas forcément `tasks`).
 
 - Lire `${TASKS_DIR}/reports/config.json`, puis le carnet de la semaine demandée seulement.
 - Sans semaine explicite, utiliser la semaine ISO du fuseau configuré :
-  `bash .claude/scripts/weekly-report-status.sh` depuis la racine du projet.
+  `bash "{{KIT_DIR}}/scripts/weekly-report-status.sh"` depuis la racine du projet.
 - Avant écriture, lire [documents.md](references/documents.md) pour les formats et états.
 - Pour collecter ou rédiger, lire [collection.md](references/collection.md).
 - Le carnet possède les événements ; les tâches possèdent état courant et preuves.
@@ -61,7 +61,7 @@ Lire `.workflow-kit.env` pour résoudre `TASKS_DIR` (chemin relatif, pas forcém
 
 ## Rappels
 
-Le contrôle read-only `.claude/scripts/weekly-report-status.sh` produit un récapitulatif compact.
+Le contrôle read-only `{{KIT_DIR}}/scripts/weekly-report-status.sh` produit un récapitulatif compact.
 Le présenter au plus une fois au début de session ; ne pas lancer un bilan sans demande.
 Il consulte la semaine courante et jusqu'à huit semaines de carnets précédents ; une semaine
 plus ancienne reste accessible explicitement. Le hook ne crée aucun fichier.

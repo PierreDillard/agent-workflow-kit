@@ -89,8 +89,9 @@ export function getStatus(root, now = new Date(), tasksDirectory = 'tasks') {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const root = fileURLToPath(new URL('../..', import.meta.url));
     const tasksDirectory = process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[2] : 'tasks';
+    // This script lives in <project>/<TASKS_DIR>/.workflow/scripts.
+    const root = resolve(fileURLToPath(new URL('../..', import.meta.url)), ...tasksDirectory.split('/').map(() => '..'));
     const status = getStatus(root, new Date(), tasksDirectory);
     if (process.argv.includes('--hook')) {
       if (status.messages.length) console.log(`Reporting ${status.week} : ${status.messages.join(' ; ')}. `
