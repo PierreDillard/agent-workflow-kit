@@ -38,9 +38,17 @@ and the commands in README/docs together if another scope is used.
 
 1. Keep `VERSION` and `package.json` `version` identical (a test enforces it); bump both for a release.
 2. Run `bash tests/run.sh` and inspect `npm pack --dry-run`.
-3. With explicit authorization only: `npm login`, then `npm publish` (public access is preset in
-   `publishConfig`). Prereleases such as `0.2.0-dev` should be published with `--tag next` so that
-   `npx @pierredillard/agent-workflow-kit@latest` keeps resolving to the last stable release.
+3. With explicit authorization only, publish through one of:
+   - **CI (recommended)**: add an npm automation/granular token with publish rights on the
+     `@pierredillard` scope as the `NPM_TOKEN` repository secret, then push a tag `v<version>`
+     (for example `git tag v0.2.0-dev && git push origin v0.2.0-dev`). `.github/workflows/publish.yml`
+     checks that the tag, `VERSION` and `package.json` agree, reruns the tests and the archive check,
+     and publishes with provenance.
+   - **Locally**: `npm login`, then `npm publish` (public access is preset in `publishConfig`).
+
+   Prereleases such as `0.2.0-dev` are published with `--tag next` (the CI workflow does this
+   automatically) so that `npx @pierredillard/agent-workflow-kit@latest` keeps resolving to the last
+   stable release; until a stable release exists, use `npx @pierredillard/agent-workflow-kit@next`.
 
 Before the first publication, `npx github:PierreDillard/agent-workflow-kit` installs from the default
 branch with the same CLI.

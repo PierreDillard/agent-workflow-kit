@@ -1,0 +1,58 @@
+name: Publish npm package
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  # Required for npm provenance attestations.
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          # Full history: the migration test installs the last 0.1 revision.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Check tag matches package version
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match package.json version ${version}" >&2
+            exit 1
+          fi
+          if [ "$(cat VERSION)" != "${version}" ]; then
+            echo "VERSION file does not match package.json version ${version}" >&2
+            exit 1
+          fi
+
+      - name: Run workflow-kit tests
+        run: bash tests/run.sh
+
+      - name: Verify publication archive
+        run: bash tests/publication-candidate.sh
+
+      - name: Publish
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          # Prereleases (e.g. 0.2.0-dev) go to "next" so that "latest" keeps the last stable release.
+          case "${version}" in
+            *-*) tag=next ;;
+            *) tag=latest ;;
+          esac
+          npm publish --provenance --tag "${tag}"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
