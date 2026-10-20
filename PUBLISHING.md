@@ -40,11 +40,13 @@ Change `name` in `package.json` and the commands in README/docs together if the 
 1. Keep `VERSION` and `package.json` `version` identical (a test enforces it); bump both for a release.
 2. Run `bash tests/run.sh` and inspect `npm pack --dry-run`.
 3. With explicit authorization only, publish through one of:
-   - **CI (recommended)**: add an npm automation/granular token with publish rights on
-     `ants-kit` (or on all packages before the first publication) as the `NPM_TOKEN` repository secret, then push a tag `v<version>`
-     (for example `git tag v0.2.0-dev && git push origin v0.2.0-dev`). `.github/workflows/publish.yml`
-     checks that the tag, `VERSION` and `package.json` agree, reruns the tests and the archive check,
-     and publishes with provenance.
+   - **CI (recommended)**: push a tag `v<version>` (for example `git tag v0.2.0 && git push origin
+     v0.2.0`). `.github/workflows/publish.yml` checks that the tag, `VERSION` and `package.json`
+     agree, reruns the tests and the archive check, and publishes with provenance. It authenticates
+     through npm trusted publishing (OIDC): the `ants-kit` package settings on npmjs.com trust
+     `PierreDillard/agent-workflow-kit` with workflow `publish.yml` and allow `npm publish`, so no
+     npm token or `NPM_TOKEN` secret is needed. Renaming the repository or the workflow file requires
+     recreating that trusted publisher.
    - **Locally**: `npm login`, then `npm publish` (public access is preset in `publishConfig`).
 
    Prereleases such as `0.2.0-dev` are published with `--tag next` (the CI workflow does this
