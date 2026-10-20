@@ -51,13 +51,12 @@ Change `name` in `package.json` and the commands in README/docs together if the 
 
    Prereleases such as `0.2.0-dev` are published with `--tag next` (the CI workflow does this
    automatically) so that `npx ants-kit@latest` keeps resolving to the last
-   stable release; until a stable release exists, use `npx ants-kit@next`.
+   stable release; `npx ants-kit@next` resolves to the latest prerelease.
 
-Before the first publication, `npx github:PierreDillard/agent-workflow-kit` installs from the default
-branch with the same CLI.
+`npx github:PierreDillard/agent-workflow-kit` installs from the default branch with the same CLI.
 
 ## Current release posture
 
-`VERSION` is `0.2.0-dev`. Treat the first public commit as experimental until the GitHub CI run and
-fresh Claude/Codex discovery checks are recorded. Linux is the tested platform. The project is MIT;
+`VERSION` is `0.2.0`, the first stable release on npm (`0.2.0-dev` was the initial prerelease).
+Fresh Claude/Codex/Copilot discovery checks are still to be recorded. Linux is the tested platform. The project is MIT;
 `THIRD_PARTY_NOTICES.md` retains the notices for the skills attributed to Matt Pocock.

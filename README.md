@@ -179,10 +179,10 @@ bash agent-workflow-kit/module.sh update --target /path/to/my-project
 
 ## Project status
 
-**Available to install and distribute as an experimental version: `0.2.0-dev`.**
+**Version `0.2.0`, published on npm as [`ants-kit`](https://www.npmjs.com/package/ants-kit).**
 
-Local tests and publication archive checks pass. GitHub CI and checks in fresh Claude Code,
-Codex, and Copilot sessions still need to be validated before declaring the first release ready.
+Local tests, GitHub CI and publication archive checks pass; Linux is the tested platform. Checks in
+fresh Claude Code, Codex, and Copilot sessions are still to be recorded.
 See the [publication checklist](PUBLISHING.md).
 
 <details>
