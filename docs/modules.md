@@ -6,9 +6,9 @@ external modules use the same manifest and installer. Node.js 18+ is required.
 Start from [project-notes](../examples/modules/project-notes/module.json), a working external example:
 
 ```bash
-npx @pierredillard/agent-workflow-kit list --catalog examples/modules
-npx @pierredillard/agent-workflow-kit add --target /path/to/project --module examples/modules/project-notes --dry-run
-npx @pierredillard/agent-workflow-kit add --target /path/to/project --module examples/modules/project-notes \
+npx ants-kit list --catalog examples/modules
+npx ants-kit add --target /path/to/project --module examples/modules/project-notes --dry-run
+npx ants-kit add --target /path/to/project --module examples/modules/project-notes \
   --set 'project-notes.title=My project notes'
 ```
 
@@ -117,10 +117,10 @@ in the target. npx downloads the requested package version; nothing else is fetc
 
 ```bash
 # Interactive: summary, confirmation, then exactly the previewed plan.
-npx @pierredillard/agent-workflow-kit@latest update
+npx ants-kit@latest update
 # Two-step, reviewable: full diff and fingerprint, then apply that exact plan.
-npx @pierredillard/agent-workflow-kit@latest update --dry-run
-npx @pierredillard/agent-workflow-kit@latest update --expect-plan PLAN_FINGERPRINT
+npx ants-kit@latest update --dry-run
+npx ants-kit@latest update --expect-plan PLAN_FINGERPRINT
 ```
 
 `--yes` applies the previewed plan without a question, for scripts. Without a terminal and without
@@ -164,7 +164,7 @@ records the delivered source without inventing an old revision. This does not es
 with every historical installation; extra managed files requiring removal are refused as migrations.
 
 Changed managed files or divergent global exports are conflicts, not files to overwrite forcibly.
-After update, run `agent-workflow-kit doctor` and the project's relevant checks. The doctor
+After update, run `ants doctor` and the project's relevant checks. The doctor
 verifies installation integrity; it does not prove native-agent routing or application behavior.
 Repeating an unchanged update preserves all bytes. Caught write errors roll back the transaction;
 power loss/process kill is not covered. Inspect a leftover `.workflow-install.lock` and the target

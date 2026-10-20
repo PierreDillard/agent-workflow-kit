@@ -48,7 +48,7 @@ Linux is the tested platform; macOS and Windows have not been validated yet.
 From your project's root directory:
 
 ```bash
-npx @pierredillard/agent-workflow-kit init
+npx ants-kit init
 ```
 
 Answer the questions about your project, then open your assistant in that project.
@@ -58,8 +58,8 @@ agents. Hooks are configured for Claude Code and Codex; approve them if your ass
 Preview first with `--dry-run`, or skip the questions with `--yes`:
 
 ```bash
-npx @pierredillard/agent-workflow-kit init --dry-run
-npx @pierredillard/agent-workflow-kit init --yes --profile continuity
+npx ants-kit init --dry-run
+npx ants-kit init --yes --profile continuity
 ```
 
 Until the package is published on npm, the same commands work straight from GitHub:
@@ -89,7 +89,7 @@ Some general-purpose skills are also exported to `~/.claude/skills` and `~/.code
 **Versioned or not.** Commit `tasks/` to share the workflow with your team, or keep it personal:
 
 ```bash
-npx @pierredillard/agent-workflow-kit init --local
+npx ants-kit init --local
 ```
 
 `--local` adds `/tasks/` to `.git/info/exclude`, a per-clone exclusion that is never committed; the
@@ -114,10 +114,10 @@ For a custom first installation:
 
 ```bash
 # Learning only
-npx @pierredillard/agent-workflow-kit init --modules learning
+npx ants-kit init --modules learning
 
 # Tasks, Memory, and Continuity
-npx @pierredillard/agent-workflow-kit init --modules tasks,memory,continuity
+npx ants-kit init --modules tasks,memory,continuity
 ```
 
 These selections replace the default (Tasks + Memory). Some modules require dependencies, which the
@@ -127,14 +127,14 @@ installer displays; every selection includes a shared core. The `minimal`, `cont
 To add a module to a project where the kit is already installed:
 
 ```bash
-npx @pierredillard/agent-workflow-kit add reporting --dry-run
-npx @pierredillard/agent-workflow-kit add reporting
+npx ants-kit add reporting --dry-run
+npx ants-kit add reporting
 ```
 
 ## Update an existing installation
 
 ```bash
-npx @pierredillard/agent-workflow-kit@latest update
+npx ants-kit@latest update
 ```
 
 The command shows what will change, asks for confirmation, then applies exactly that plan.
@@ -156,7 +156,7 @@ Each project can have its own modules, task directory, verification commands, an
 Copy the [example configuration](examples/project.env), adjust the values, then use your file:
 
 ```bash
-npx @pierredillard/agent-workflow-kit init --config my-project.env
+npx ants-kit init --config my-project.env
 ```
 
 You can also customize module sources before installation or create your own modules:
@@ -198,7 +198,7 @@ See the [publication checklist](PUBLISHING.md).
 To check an installation's files and modules without modifying them:
 
 ```bash
-npx @pierredillard/agent-workflow-kit doctor
+npx ants-kit doctor
 # or, without the package: bash tasks/.workflow/scripts/workflow-doctor.sh
 ```
 

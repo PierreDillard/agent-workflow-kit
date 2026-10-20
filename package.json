@@ -1,5 +1,5 @@
 {
-  "name": "@pierredillard/agent-workflow-kit",
+  "name": "ants-kit",
   "version": "0.2.0-dev",
   "description": "Modular task, memory and quality workflow for Claude Code, Codex and Copilot, installed into a single project directory.",
   "license": "MIT",
@@ -12,7 +12,7 @@
   "bugs": "https://github.com/PierreDillard/agent-workflow-kit/issues",
   "keywords": ["claude-code", "codex", "copilot", "agents", "skills", "workflow"],
   "bin": {
-    "agent-workflow-kit": "bin/agent-workflow-kit.mjs"
+    "ants": "bin/ants.mjs"
   },
   "files": [
     "bin/",

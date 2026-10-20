@@ -11,7 +11,7 @@ import { doctor } from '../templates/project/.workflow/runtime/doctor.mjs';
 import { locateInstallation, validateTasksDirectory } from '../templates/project/.workflow/runtime/layout.mjs';
 
 const kitRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const usage = `Usage: agent-workflow-kit <command> [options]
+const usage = `Usage: ants <command> [options]
 
 Commands:
   init      Install the kit into a Git project (alias: install)
