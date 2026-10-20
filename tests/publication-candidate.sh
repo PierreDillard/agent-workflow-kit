@@ -15,7 +15,7 @@ if find "$candidate_root" -mindepth 1 -printf '%P\n' | rg "$unexpected_paths"; t
 fi
 
 for required_path in README.md LICENSE THIRD_PARTY_NOTICES.md PUBLISHING.md \
-  .github/workflows/ci.yml install.sh module.sh package.json bin/agent-workflow-kit.mjs core modules \
+  .github/workflows/ci.yml install.sh module.sh package.json bin/ants.mjs core modules \
   templates/project/.workflow/runtime tests; do
   [ -e "$candidate_root/$required_path" ] || {
     printf 'Required publication path missing from archive: %s\n' "$required_path" >&2

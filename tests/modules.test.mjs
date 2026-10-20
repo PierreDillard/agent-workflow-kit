@@ -561,7 +561,7 @@ test('CLI: default target is the current Git root, --local excludes the kit dire
   const subdirectory = join(setup.project, 'src');
   mkdirSync(subdirectory);
   const cli = (args, expectedSuccess = true) => {
-    const result = spawnSync('node', [join(repository, 'bin/agent-workflow-kit.mjs'), ...args], { cwd: subdirectory, encoding: 'utf8' });
+    const result = spawnSync('node', [join(repository, 'bin/ants.mjs'), ...args], { cwd: subdirectory, encoding: 'utf8' });
     assert.equal(result.status === 0, expectedSuccess, result.stdout + result.stderr);
     return result.stdout + result.stderr;
   };
@@ -584,11 +584,11 @@ test('npm package: install, doctor and update from an extracted package identifi
   assert.equal(packed.status, 0, packed.stderr);
   const [{ filename, files }] = JSON.parse(packed.stdout);
   const packagedPaths = files.map(file => file.path);
-  for (const required of ['bin/agent-workflow-kit.mjs', 'core/skills/project-workflow/SKILL.md', 'modules/tasks/module.json',
+  for (const required of ['bin/ants.mjs', 'core/skills/project-workflow/SKILL.md', 'modules/tasks/module.json',
     'templates/project/.workflow/runtime/update.mjs', 'templates/project/.claude/settings.json', 'VERSION', 'LICENSE']) assert.ok(packagedPaths.includes(required), required);
   assert.equal(packagedPaths.some(path => /^(tests|\.github|tasks)\//.test(path)), false);
   command('tar', ['-xzf', join(packDirectory, filename.split('/').pop()), '-C', packDirectory]);
-  const packageBin = join(packDirectory, 'package/bin/agent-workflow-kit.mjs');
+  const packageBin = join(packDirectory, 'package/bin/ants.mjs');
   const { name, version } = JSON.parse(readFileSync(join(repository, 'package.json')));
   command('node', [packageBin, 'init', '--target', setup.project, '--yes', '--config', setup.config, '--user-root', setup.user]);
   assert.match(command('node', [packageBin, 'doctor', '--target', setup.project]), /0 failure/);
