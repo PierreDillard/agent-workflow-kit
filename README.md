@@ -1,5 +1,6 @@
 # Agent Workflow Kit
 
+[![npm](https://img.shields.io/npm/v/ants-kit)](https://www.npmjs.com/package/ants-kit)
 [![CI](https://github.com/PierreDillard/agent-workflow-kit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/PierreDillard/agent-workflow-kit/actions/workflows/ci.yml)
 
 **Organize work with your AI, your way.**
@@ -62,8 +63,28 @@ npx ants-kit init --dry-run
 npx ants-kit init --yes --profile continuity
 ```
 
-Until the package is published on npm, the same commands work straight from GitHub:
-`npx github:PierreDillard/agent-workflow-kit init`.
+The package is [`ants-kit`](https://www.npmjs.com/package/ants-kit) on npm. To get the shorter
+`ants` command instead of `npx ants-kit`, install it globally:
+
+```bash
+npm install -g ants-kit
+ants init
+```
+
+To try the unreleased state of the default branch: `npx github:PierreDillard/agent-workflow-kit init`.
+
+### Commands
+
+| Command | What it does |
+|---|---|
+| `npx ants-kit init` | Install the kit into the current Git project (alias: `install`) |
+| `npx ants-kit add <modules>` | Add modules to an existing installation |
+| `npx ants-kit@latest update` | Preview the update to the latest release, then apply it after confirmation |
+| `npx ants-kit doctor` | Check the installation without modifying it |
+| `npx ants-kit list` | List available modules |
+| `npx ants-kit --help` | Show every option (`--target`, `--dry-run`, `--yes`, `--tasks-dir`, `--local`…) |
+
+With a global installation, replace `npx ants-kit` with `ants`.
 
 ## One directory in your project
 
