@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { digest, safePath } from './paths.mjs';
-import { loadCatalog, resolveModules, officialModules } from './catalog.mjs';
+import { loadCatalog, verifyCheck, resolveModules, officialModules } from './catalog.mjs';
 import { materializeModule, materializeCore, composeRules, composeComponents } from './compose.mjs';
 import { loadState, checkState, checkPrecommit } from './doctor.mjs';
 import { applyPlan } from './transaction.mjs';
@@ -98,12 +98,7 @@ export function installOrAdd(options) {
   const state = { schemaVersion: 1, version: options.kitVersion ?? previous.version, configuration: { ...configuration, userRoot }, selected: requested, modules, files };
   // Validate declarative checks against the planned content without executing module code.
   for (const module of modules) for (const check of module.checks) {
-    const content = getContent(check.path);
-    if (check.maxBytes && content.length > check.maxBytes) throw new Error(`Size limit exceeded: ${check.path}`);
-    if (check.type === 'json' || check.type === 'timezone') {
-      const value = JSON.parse(content);
-      if (check.type === 'timezone') new Intl.DateTimeFormat('en', { timeZone: value.timezone });
-    }
+    if ((check.level ?? 'fail') === 'fail') verifyCheck(check, check.path, getContent(check.path));
   }
   entries.push({ root: 'project', path: layout.inventory, content: Buffer.from(JSON.stringify(state, null, 2) + '\n'), mode: 0o644,
     ...(previous ? { expected: digest(readFileSync(safePath(projectRoot, layout.inventory))) } : {}) });

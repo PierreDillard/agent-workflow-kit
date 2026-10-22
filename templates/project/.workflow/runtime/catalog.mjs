@@ -1,5 +1,5 @@
 import { existsSync, readdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { assertKeys, readJson, safePath } from './paths.mjs';
 
 export const officialModules = ['tasks', 'memory', 'continuity', 'quality', 'bugs', 'reporting', 'exploration', 'learning'];
@@ -51,11 +51,27 @@ export function validateManifest(manifest) {
     }
   }
   for (const check of manifest.checks ?? []) {
-    assertKeys(check, ['path', 'type', 'maxBytes'], 'check');
-    if (typeof check.path !== 'string' || !['file', 'json', 'timezone'].includes(check.type) ||
+    assertKeys(check, ['path', 'pattern', 'type', 'maxBytes', 'level'], 'check');
+    // Patterns match user-created files and links point to user content: the kit can only warn about them.
+    if ((check.path === undefined) === (check.pattern === undefined) || typeof (check.path ?? check.pattern) !== 'string' ||
+        !['file', 'json', 'timezone', 'links'].includes(check.type) || !['fail', 'warn'].includes(check.level ?? 'fail') ||
+        ((check.pattern !== undefined || check.type === 'links') && check.level !== 'warn') ||
         (check.maxBytes !== undefined && (!Number.isInteger(check.maxBytes) || check.maxBytes < 1))) throw new Error('Invalid check');
   }
   return manifest;
+}
+
+// The single verification of a declarative check, shared by install, add, update and doctor.
+export function verifyCheck(check, path, content, projectRoot) {
+  if (check.maxBytes && content.length > check.maxBytes) throw new Error(`Size limit exceeded: ${path}`);
+  if (check.type === 'links') {
+    const broken = relativeLinks(content.toString()).filter(target => !existsSync(join(resolve(projectRoot), dirname(path), target)));
+    if (broken.length) throw new Error(`Broken link in ${path}: ${broken.join(', ')}`);
+  }
+  if (check.type === 'json' || check.type === 'timezone') {
+    const value = JSON.parse(content);
+    if (check.type === 'timezone') new Intl.DateTimeFormat('en', { timeZone: value.timezone });
+  }
 }
 
 export function loadCatalog(moduleDirectories, explicitSources) {
@@ -96,4 +112,11 @@ export function resolveModules(catalog, selected, installed = []) {
   }
   for (const moduleId of [...known.keys(), ...selected].sort()) visit(moduleId);
   return ordered;
+}
+
+// Markdown link targets that name a local file: URLs, anchors and absolute paths are left out.
+function relativeLinks(markdown) {
+  return [...markdown.matchAll(/\]\((<[^>]+>|[^)\s]+)[^)]*\)/g)]
+    .map(match => decodeURIComponent(match[1].replace(/^<|>$/g, '').split('#')[0]))
+    .filter(target => target && !target.startsWith('/') && !/^[a-z][a-z0-9+.-]*:/i.test(target));
 }

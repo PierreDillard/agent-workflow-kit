@@ -85,8 +85,8 @@ export function materializeModule(source, configuration, settings) {
   });
   const hooks = (manifest.hooks ?? []).map(hook => ({ ...hook, path: expandPath(hook.path), args: (hook.args ?? []).map(expandPath) }));
   for (const hook of hooks) if (!entries.some(entry => entry.root === 'project' && entry.path === hook.path && !entry.editable)) throw new Error(`Hook must reference a module-owned managed file: ${hook.path}`);
-  const checks = (manifest.checks ?? []).map(check => ({ ...check, path: expandPath(check.path) }));
-  for (const check of checks) if (!entries.some(entry => entry.root === 'project' && entry.path === check.path)) throw new Error(`Check must reference an owned file: ${check.path}`);
+  const checks = (manifest.checks ?? []).map(check => check.pattern ? { ...check, pattern: expandPath(check.pattern) } : { ...check, path: expandPath(check.path) });
+  for (const check of checks) if (check.path && !entries.some(entry => entry.root === 'project' && entry.path === check.path)) throw new Error(`Check must reference an owned file: ${check.path}`);
   const fingerprint = digest(JSON.stringify(manifest) + entries.map(entry => `${entry.root}:${entry.path}:${entry.mode}:${digest(entry.content)}`).join('\n'));
   return { entries, module: { id: manifest.id, version: manifest.version, requires: manifest.requires ?? {}, rules, hooks, checks,
     components, settings: moduleSettings, fingerprint } };

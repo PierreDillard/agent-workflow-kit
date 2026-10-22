@@ -1,8 +1,8 @@
 import { readFileSync, existsSync, lstatSync, accessSync, constants } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
-import { digest, safePath, readJson } from './paths.mjs';
-import { resolveModules } from './catalog.mjs';
+import { digest, safePath, readJson, expandPattern } from './paths.mjs';
+import { resolveModules, verifyCheck } from './catalog.mjs';
 import { locateInstallation } from './layout.mjs';
 
 export function loadState(projectRoot) {
@@ -27,25 +27,26 @@ export function checkState(state, roots) {
     const content = readFileSync(path);
     if (!file.editable && (digest(content) !== file.sha256 || (lstatSync(path).mode & 0o777) !== file.mode)) throw new Error(`Managed file changed: ${file.root}:${file.path}`);
   }
+  const warnings = [];
   for (const module of state.modules) for (const check of module.checks) {
-    const content = readFileSync(safePath(roots.project, check.path));
-    if (check.maxBytes && content.length > check.maxBytes) throw new Error(`Size limit exceeded: ${check.path}`);
-    if (check.type === 'json' || check.type === 'timezone') {
-      const value = JSON.parse(content);
-      if (check.type === 'timezone') new Intl.DateTimeFormat('en', { timeZone: value.timezone });
+    for (const path of check.pattern ? expandPattern(roots.project, check.pattern) : [check.path]) {
+      try { verifyCheck(check, path, readFileSync(safePath(roots.project, path)), roots.project); }
+      catch (error) { if (check.level !== 'warn') throw error; warnings.push(error.message); }
     }
   }
   for (const filename of ['CLAUDE.md', 'AGENTS.md']) if (!readFileSync(safePath(roots.project, filename), 'utf8').includes('<!-- workflow-kit:start -->')) throw new Error(`Workflow pointer missing: ${filename}`);
   if (state.configuration.requirePrecommit) checkPrecommit(roots.project);
+  return warnings;
 }
 
 export function doctor(projectRoot, userRoot) {
   try {
     const { state, layout } = loadState(projectRoot);
-    checkState(state, { project: projectRoot, user: userRoot ?? state.configuration.userRoot });
+    const warnings = checkState(state, { project: projectRoot, user: userRoot ?? state.configuration.userRoot });
     console.log(`ok    ${state.modules.length} modules; managed files, mirrors, dependencies and declarative checks`);
-    if (layout.legacy) console.log('warn  0.1 root-level layout; run the kit update to move it into the task directory');
-    console.log('workflow-doctor: 0 failure(s), 0 warning(s)');
+    if (layout.legacy) warnings.push('0.1 root-level layout; run the kit update to move it into the task directory');
+    for (const warning of warnings) console.log(`warn  ${warning}`);
+    console.log(`workflow-doctor: 0 failure(s), ${warnings.length} warning(s)`);
   } catch (error) { console.error(`FAIL  ${error.message}\nworkflow-doctor: 1 failure(s)`); process.exitCode = 1; }
 }
 

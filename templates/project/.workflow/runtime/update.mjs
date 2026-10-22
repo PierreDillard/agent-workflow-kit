@@ -2,7 +2,7 @@ import { existsSync, readFileSync, lstatSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { safePath, digest } from './paths.mjs';
-import { loadCatalog, resolveModules } from './catalog.mjs';
+import { loadCatalog, verifyCheck, resolveModules } from './catalog.mjs';
 import { materializeModule, materializeCore, composeRules, composeComponents } from './compose.mjs';
 import { loadState, checkState } from './doctor.mjs';
 import { applyPlan } from './transaction.mjs';
@@ -134,12 +134,7 @@ export function updateKit(options) {
     if (index < 0) files.push(record); else files[index] = record;
   }
   for (const module of modules) for (const check of module.checks) {
-    const content = getContent(check.path);
-    if (check.maxBytes && content.length > check.maxBytes) throw new Error(`Size limit exceeded: ${check.path}`);
-    if (check.type === 'json' || check.type === 'timezone') {
-      const value = JSON.parse(content);
-      if (check.type === 'timezone') new Intl.DateTimeFormat('en', { timeZone: value.timezone });
-    }
+    if ((check.level ?? 'fail') === 'fail') verifyCheck(check, check.path, getContent(check.path));
   }
   const state = { ...previous, version, source, modules, files };
   const inventory = Buffer.from(JSON.stringify(state, null, 2) + '\n');
