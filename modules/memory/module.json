@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "memory",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Memory workflow capabilities",
   "requires": {},
   "skills": [
@@ -40,6 +40,28 @@
       "path": "{{TASKS_DIR}}/DECISIONS.md",
       "type": "file",
       "maxBytes": 32768
+    },
+    {
+      "pattern": "{{TASKS_DIR}}/memory/*.md",
+      "type": "file",
+      "maxBytes": 16384,
+      "level": "warn"
+    },
+    {
+      "pattern": "{{TASKS_DIR}}/decisions/*.md",
+      "type": "file",
+      "maxBytes": 16384,
+      "level": "warn"
+    },
+    {
+      "path": "{{TASKS_DIR}}/PROJECT_MEMORY.md",
+      "type": "links",
+      "level": "warn"
+    },
+    {
+      "path": "{{TASKS_DIR}}/DECISIONS.md",
+      "type": "links",
+      "level": "warn"
     }
   ]
 }

@@ -1,6 +1,6 @@
 ---
 name: context-relay
-description: Prepare a branch-scoped handoff before context saturation while preserving the current atomic step and loading boundaries.
+description: Prepare a branch-scoped handoff before context saturation while preserving the current atomic step and loading boundaries. Use when the conversation has run long, many files have been read or edited, context is being compressed, or coherence degrades; act proactively.
 ---
 
 # Context Relay

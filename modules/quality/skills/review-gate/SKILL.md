@@ -1,6 +1,6 @@
 ---
 name: review-gate
-description: Perform an independent review of a bounded task against a fixed Git SHA before a default-branch merge or when explicitly requested.
+description: Perform an independent review of a bounded task against a fixed Git SHA before a default-branch merge or when explicitly requested. Use before any merge into the default branch, or when the user asks for an independent review or to mark a task reviewed.
 ---
 
 # Review Gate

@@ -1,6 +1,6 @@
 ---
 name: perf-gate
-description: Require a bounded ceiling, written prediction, fixed protocol and measured comparison before claiming a performance improvement.
+description: Require a bounded ceiling, written prediction, fixed protocol and measured comparison before claiming a performance improvement. Use when a task claims a performance gain, when a change is justified by "it feels faster", when reading a profiler capture, or before optimizing anything.
 ---
 
 # Performance Gate

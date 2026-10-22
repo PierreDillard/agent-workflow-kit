@@ -27,7 +27,7 @@ of eight official modules and never automatically activates external discoveries
   "id": "project-notes",
   "version": "1.0.0",
   "description": "A small notebook",
-  "requires": { "memory": "1.0.0" },
+  "requires": { "memory": "1.1.0" },
   "config": { "title": "Project notes" },
   "skills": [{ "name": "project-notes", "source": "skills/project-notes" }],
   "files": [{ "source": "templates/notes.md", "target": "{{TASKS_DIR}}/notes/README.md", "editable": true }],
@@ -47,7 +47,7 @@ writing any destination. One component/file has one owner; destination collision
 | `files` | `source` file/directory, `target`, optional boolean `editable` (default false) |
 | `rules` | Unique `id`, Markdown `source`, `point`, optional `when` array of module IDs |
 | `hooks` | Unique `id`, module-owned managed `path`, `runner` (`bash` or `node`), `args`, `point`, optional `when` |
-| `checks` | Owned `path`, `type` (`file`, `json`, `timezone`), optional positive `maxBytes` |
+| `checks` | Owned `path` or `pattern` (`*` within one path segment), `type` (`file`, `json`, `timezone`, `links`), optional positive `maxBytes`, optional `level` (`fail` by default, or `warn`; a `pattern` or `links` check requires `warn`) |
 | `config` | String defaults; override on first activation with `--set module.key=value` |
 
 Collections other than identity fields may be omitted. A source path is relative to its module.
@@ -80,8 +80,10 @@ Dependencies run before dependents; unrelated modules use sorted IDs; contributi
 retain manifest order. Reporting's handoff fragment is a built-in example of conditional composition.
 
 The doctor checks dependencies, managed hashes/modes, mirrored skills and declarative checks.
-`file` checks presence, `json` additionally parses JSON, and `timezone` also validates its `timezone`
-field. It checks no external services and makes no claim about the agent following instructions.
+`file` checks presence, `json` additionally parses JSON, `timezone` also validates its `timezone`
+field, and `links` requires every relative Markdown link to name an existing file. A `warn` check is
+reported by the doctor without failing it, and installation, add and update skip it. It checks no
+external services and makes no claim about the agent following instructions.
 
 ## Preservation and lifecycle
 

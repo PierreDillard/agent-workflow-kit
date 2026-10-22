@@ -1,6 +1,6 @@
 ---
 name: validate-task
-description: Confirm objective, invariants, ownership boundaries, scope and acceptance checks before ambiguous, contractual or multi-layer implementation, and after corrections that change them.
+description: Confirm objective, invariants, ownership boundaries, scope and acceptance checks before ambiguous, contractual or multi-layer implementation, and after corrections that change them. Use when a request is ambiguous, contractual or spans several layers, before implementing it, and again after a correction changes its scope.
 ---
 
 # Validate Task

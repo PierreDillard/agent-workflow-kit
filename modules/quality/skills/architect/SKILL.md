@@ -1,6 +1,6 @@
 ---
 name: architect
-description: Validate file and folder placement against the current project's documented architecture before creating, moving or refactoring code.
+description: Validate file and folder placement against the current project's documented architecture before creating, moving or refactoring code. Use when adding a file or directory, implementing a feature or moving code, to confirm the right layer and folder before writing anything.
 ---
 
 # Architect

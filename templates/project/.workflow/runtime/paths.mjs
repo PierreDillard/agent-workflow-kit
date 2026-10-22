@@ -37,3 +37,19 @@ export function assertKeys(value, allowed, label) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`Invalid ${label}`);
   for (const key of Object.keys(value)) if (!allowed.includes(key)) throw new Error(`Unknown ${label} field: ${key}`);
 }
+
+// Lists the regular files matching `pattern`, where `*` stands for any part of a single path segment.
+export function expandPattern(root, pattern) {
+  safePath(root, pattern);
+  const base = resolve(root);
+  let matches = [''];
+  for (const segment of pattern.split('/')) {
+    const wildcard = new RegExp(`^${segment.split('*').map(part => part.replace(/[.+?^$|()[\]{}\\]/g, '\\$&')).join('.*')}$`);
+    matches = matches.flatMap(prefix => {
+      const directory = join(base, prefix);
+      if (!lstatSync(directory).isDirectory()) return [];
+      return readdirSync(directory).filter(name => wildcard.test(name)).sort().map(name => prefix ? `${prefix}/${name}` : name);
+    });
+  }
+  return matches.filter(path => lstatSync(join(base, path)).isFile());
+}

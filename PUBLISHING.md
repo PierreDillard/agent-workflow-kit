@@ -14,8 +14,9 @@ planning backlog, which is not part of the package.
 ## Excluded local material
 
 - `tasks/`: personal planning, historical evidence and project references.
-- `global-skills/`, legacy template skills/scripts/agents, `components.tsv` and the legacy reporting
-  configurator: retained locally as historical snapshots only; the current installer does not read them.
+- Legacy template scripts/agents, `components.tsv` and the legacy reporting configurator: retained
+  locally as historical snapshots only; the current installer does not read them. Skills have a
+  single editable source in `core/skills/` and `modules/*/skills/`.
 
 The exclusions are declared in `.gitignore`, so `git add .` stages the intended source package
 without deleting the local snapshots.
@@ -53,7 +54,8 @@ Change `name` in `package.json` and the commands in README/docs together if the 
    automatically) so that `npx ants-kit@latest` keeps resolving to the last
    stable release; `npx ants-kit@next` resolves to the latest prerelease.
 
-`npx github:PierreDillard/agent-workflow-kit` installs from the default branch with the same CLI.
+Maintainer note: `npx github:PierreDillard/agent-workflow-kit` runs the unreleased default branch for
+testing; it is not a user install path (see README).
 
 ## Current release posture
 

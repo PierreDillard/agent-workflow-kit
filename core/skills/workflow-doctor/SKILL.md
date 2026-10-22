@@ -1,6 +1,6 @@
 ---
 name: workflow-doctor
-description: Run the installed workflow's read-only health check after installation or workflow changes.
+description: Run the installed workflow's read-only health check after installation or workflow changes. Use after installing or updating the kit, after editing any skill, on a new clone or machine, or when the user says "doctor" or "check the workflow".
 ---
 
 # Workflow Doctor

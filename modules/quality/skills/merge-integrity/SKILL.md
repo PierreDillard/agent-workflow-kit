@@ -1,6 +1,6 @@
 ---
 name: merge-integrity
-description: Audit semantic divergence immediately after a cross-branch merge, even when Git reports no textual conflict.
+description: Audit semantic divergence immediately after a cross-branch merge, even when Git reports no textual conflict. Use after any cross-branch merge, before declaring it done, and when a test passes on one branch but fails on another.
 ---
 
 # Merge Integrity

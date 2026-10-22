@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "bugs",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Bugs workflow capabilities",
   "requires": {},
   "skills": [
@@ -29,5 +29,23 @@
     }
   ],
   "hooks": [],
-  "checks": []
+  "checks": [
+    {
+      "path": "{{TASKS_DIR}}/bugs/README.md",
+      "type": "file",
+      "maxBytes": 8192,
+      "level": "warn"
+    },
+    {
+      "pattern": "{{TASKS_DIR}}/bugs/*.md",
+      "type": "file",
+      "maxBytes": 16384,
+      "level": "warn"
+    },
+    {
+      "path": "{{TASKS_DIR}}/bugs/README.md",
+      "type": "links",
+      "level": "warn"
+    }
+  ]
 }

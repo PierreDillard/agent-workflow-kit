@@ -125,6 +125,34 @@ for (const [profile, selection, modules] of [
   assert.match(command('bash', [join(setup.project, kit, 'scripts/workflow-doctor.sh')]), /0 failure/);
 });
 
+test('doctor warns, without failing, on oversized editable themes and indexes', context => {
+  const setup = fixture(context);
+  install(setup, ['--modules', 'tasks,memory,bugs']);
+  const tasks = join(setup.project, 'planning notes/tasks');
+  const oversized = ['memory/networking.md', 'decisions/storage.md', 'bugs/parser.md', 'todo/dev-example/README.md'];
+  for (const path of [...oversized, 'memory/small.md']) mkdirSync(join(tasks, path, '..'), { recursive: true });
+  for (const path of oversized) writeFileSync(join(tasks, path), 'x'.repeat(16385));
+  writeFileSync(join(tasks, 'memory/small.md'), '# Small theme\n');
+  const output = command('bash', [join(setup.project, kit, 'scripts/workflow-doctor.sh')]);
+  for (const path of oversized) assert.match(output, new RegExp(`warn  Size limit exceeded: planning notes/tasks/${path}`));
+  assert.doesNotMatch(output, /small\.md/);
+  assert.match(output, /0 failure\(s\), 4 warning\(s\)/);
+});
+
+test('doctor warns, without failing, on index links to missing files', context => {
+  const setup = fixture(context);
+  install(setup, ['--modules', 'tasks,memory,bugs']);
+  const tasks = join(setup.project, 'planning notes/tasks');
+  mkdirSync(join(tasks, 'memory')); mkdirSync(join(tasks, 'todo/dev-example'), { recursive: true });
+  writeFileSync(join(tasks, 'memory/present.md'), '# Present\n');
+  writeFileSync(join(tasks, 'PROJECT_MEMORY.md'), '| [present](memory/present.md) | [gone](memory/gone.md#rules) | [site](https://example.com) | [top](#themes) |\n');
+  writeFileSync(join(tasks, 'todo/dev-example/README.md'), '- [step](01-step.md)\n- [memory](<../../memory/present.md>)\n');
+  const output = command('bash', [join(setup.project, kit, 'scripts/workflow-doctor.sh')]);
+  assert.match(output, /warn  Broken link in planning notes\/tasks\/PROJECT_MEMORY.md: memory\/gone.md/);
+  assert.match(output, /warn  Broken link in planning notes\/tasks\/todo\/dev-example\/README.md: 01-step.md/);
+  assert.match(output, /0 failure\(s\), 2 warning\(s\)/);
+});
+
 test('external module: added after install, settings, dependencies, mirrors, editable notes and exact repeat', context => {
   const setup = fixture(context); install(setup);
   const source = join(repository, 'examples/modules/project-notes');
@@ -229,6 +257,8 @@ for (const [label, overrides, expected] of [
   ['legacy script destination', { files: [{ source: 'payload.md', target: '.claude/scripts/payload.md' }] }, /outside managed destinations/],
   ['unsafe path', { files: [{ source: 'payload.md', target: '{{TASKS_DIR}}/../escape' }] }, /Unsafe path/],
   ['source escape', { files: [{ source: '../payload.md', target: '{{TASKS_DIR}}/safe.md' }] }, /Unsafe path/],
+  ['failing pattern check', { checks: [{ pattern: '{{TASKS_DIR}}/notes/*.md', type: 'file' }] }, /Invalid check/],
+  ['check with path and pattern', { checks: [{ path: '{{TASKS_DIR}}/a.md', pattern: '{{TASKS_DIR}}/*.md', type: 'file', level: 'warn' }] }, /Invalid check/],
 ]) test(`reject ${label} before mutation`, context => {
   const setup = fixture(context); install(setup);
   const source = makeModule(setup, 'invalid-module', overrides);
@@ -327,6 +357,17 @@ test('all official modules have a unique skill owner; all profiles and independe
   }
   const complete = fixture(context); install(complete, ['--profile', 'complete']);
   assert.equal(state(complete).modules.length, 8);
+});
+
+test('every core and official module skill description names when to use it', () => {
+  const skillDirectories = [join(repository, 'core/skills')];
+  for (const moduleId of readdirSync(join(repository, 'modules'))) skillDirectories.push(join(repository, 'modules', moduleId, 'skills'));
+  const missingTriggers = [];
+  for (const skillDirectory of skillDirectories.filter(existsSync)) for (const skillName of readdirSync(skillDirectory)) {
+    const description = readFileSync(join(skillDirectory, skillName, 'SKILL.md'), 'utf8').match(/^description:(.*)$/m)?.[1] ?? '';
+    if (!/\b(Use (when|before|after|for)|Utiliser)\b/i.test(description)) missingTriggers.push(skillName);
+  }
+  assert.deepEqual(missingTriggers.sort(), []);
 });
 
 test('installation lock and required precommit are checked without overwriting project data', context => {
