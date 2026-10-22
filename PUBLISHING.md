@@ -14,8 +14,9 @@ planning backlog, which is not part of the package.
 ## Excluded local material
 
 - `tasks/`: personal planning, historical evidence and project references.
-- `global-skills/`, legacy template skills/scripts/agents, `components.tsv` and the legacy reporting
-  configurator: retained locally as historical snapshots only; the current installer does not read them.
+- Legacy template scripts/agents, `components.tsv` and the legacy reporting configurator: retained
+  locally as historical snapshots only; the current installer does not read them. Skills have a
+  single editable source in `core/skills/` and `modules/*/skills/`.
 
 The exclusions are declared in `.gitignore`, so `git add .` stages the intended source package
 without deleting the local snapshots.
