@@ -71,8 +71,6 @@ npm install -g ants-kit
 ants init
 ```
 
-To try the unreleased state of the default branch: `npx github:PierreDillard/agent-workflow-kit init`.
-
 ### Commands
 
 | Command | What it does |
