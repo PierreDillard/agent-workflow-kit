@@ -88,7 +88,12 @@ Un module ne peut contribuer qu'à `PROJECT_RULES.md` via les points `session-st
 point d'intégration pour le routeur : un module comme `examples/modules/project-notes` (ou un
 futur module `stack`) n'est trouvé que par la description de son skill, jamais par l'orchestrateur.
 
-### 3.3 Recommandation : générer le routeur à l'installation
+### 3.3 Recommandation : une skill générée à l'installation
+
+`project-workflow` reste une **skill** (`.claude/skills/project-workflow/SKILL.md` et son miroir
+`.codex/`), découverte et chargée à la demande comme les autres ; seule sa source change : au lieu
+d'être copiée telle quelle, elle est **générée** pour chaque projet à partir des modules installés.
+Aucun fichier d'index ou de configuration supplémentaire n'est lu par l'assistant.
 
 Le kit possède déjà la mécanique nécessaire (`composeRules` recompose `PROJECT_RULES.md` à chaque
 `init` / `add` / `update`, avec conditions `when`). L'appliquer au routeur :
