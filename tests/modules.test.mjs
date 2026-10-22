@@ -153,6 +153,27 @@ test('doctor warns, without failing, on index links to missing files', context =
   assert.match(output, /0 failure\(s\), 2 warning\(s\)/);
 });
 
+test('knowledge: indexes installed editable, preserved on repeat add, themes and links warn', context => {
+  const setup = fixture(context); install(setup);
+  add(setup, ['--modules', 'knowledge']);
+  const tasks = join(setup.project, 'planning notes/tasks');
+  assert.match(read(setup, 'planning notes/tasks/APP.md'), /\| Flow \| File \| When to read/);
+  assert.match(read(setup, 'planning notes/tasks/DOC.md'), /grep -ril '<symbol>' planning notes\/tasks\/doc/);
+  assert.match(read(setup, `${kit}/PROJECT_RULES.md`), /<!-- module:knowledge\/main -->\nFor code paths start at `\$\{TASKS_DIR\}\/APP.md`/);
+  assert.doesNotMatch(read(setup, 'CLAUDE.md'), /APP\.md/);
+  assert.match(command('bash', [join(setup.project, kit, 'scripts/workflow-doctor.sh')]), /0 failure\(s\), 0 warning\(s\)/);
+  mkdirSync(join(tasks, 'doc/app'), { recursive: true });
+  writeFileSync(join(tasks, 'doc/app/login.md'), 'x'.repeat(16385));
+  writeFileSync(join(tasks, 'APP.md'), '| Login | [login.md](doc/app/login.md) | `signIn` |\n| Cart | [cart.md](doc/app/cart.md) | `addItem` |\n');
+  const edited = snapshot(setup.project);
+  add(setup, ['--modules', 'knowledge']);
+  assert.deepEqual(snapshot(setup.project), edited);
+  const output = command('bash', [join(setup.project, kit, 'scripts/workflow-doctor.sh')]);
+  assert.match(output, /warn  Size limit exceeded: planning notes\/tasks\/doc\/app\/login.md/);
+  assert.match(output, /warn  Broken link in planning notes\/tasks\/APP.md: doc\/app\/cart.md/);
+  assert.match(output, /0 failure\(s\), 2 warning\(s\)/);
+});
+
 test('external module: added after install, settings, dependencies, mirrors, editable notes and exact repeat', context => {
   const setup = fixture(context); install(setup);
   const source = join(repository, 'examples/modules/project-notes');
@@ -187,7 +208,7 @@ test('complete profile, conditional reporting integration, reporting add and bra
   const output = command('bash', [join(setup.project, kit, 'hooks/show-handoff.sh')]);
   assert.match(output, /todo\/dev-example\/README.md/); assert.match(output, /memory\/dev-example.md/); assert.match(output, /handoff\/dev-example.md/); assert.match(output, /Reporting/);
   add(setup, ['--modules', officialModules.join(',')]);
-  assert.equal(state(setup).modules.length, 8);
+  assert.equal(state(setup).modules.length, 9);
   assert.match(command('bash', [join(setup.project, kit, 'scripts/workflow-doctor.sh')]), /0 failure/);
 });
 
@@ -351,12 +372,12 @@ test('all official modules have a unique skill owner; all profiles and independe
     'wayfinder', 'weekly-report', 'write-task',
   ];
   assert.deepEqual([...owners].sort(), expectedSkills.sort());
-  for (const moduleId of ['memory', 'tasks', 'bugs', 'reporting', 'learning', 'exploration']) {
+  for (const moduleId of ['memory', 'tasks', 'bugs', 'reporting', 'learning', 'exploration', 'knowledge']) {
     const setup = fixture(context); install(setup, ['--modules', moduleId]);
     assert.match(command('bash', [join(setup.project, kit, 'scripts/workflow-doctor.sh')]), /0 failure/);
   }
   const complete = fixture(context); install(complete, ['--profile', 'complete']);
-  assert.equal(state(complete).modules.length, 8);
+  assert.equal(state(complete).modules.length, 9);
 });
 
 test('every core and official module skill description names when to use it', () => {
@@ -433,6 +454,7 @@ for (const [profile, extra, configuration] of [
   ['continuity', ['--profile', 'continuity'], ''],
   ['quality', ['--modules', 'tasks,memory,quality'], ''],
   ['quality with exports', ['--modules', 'tasks,memory,quality'], 'INSTALL_GLOBAL_SKILLS=true\n'],
+  ['knowledge', ['--modules', 'tasks,memory,knowledge'], ''],
 ]) test(`update ${profile}: real source and module diff, preserved local data, mirrors, doctor and idempotence`, context => {
   const setup = updateFixture(context, extra, configuration);
   const initial = state(setup);
@@ -446,6 +468,7 @@ for (const [profile, extra, configuration] of [
     initial.configuration.tasksDirectory + '/todo/local-effort/01-task.md',
     initial.configuration.tasksDirectory + '/handoff/dev-local.md',
   ];
+  if (initial.modules.some(module => module.id === 'knowledge')) localArtifacts.push(initial.configuration.tasksDirectory + '/APP.md');
   for (const path of localArtifacts) {
     mkdirSync(resolve(setup.project, path, '..'), { recursive: true });
     writeFileSync(join(setup.project, path), 'Local user evidence: do not reset.\n');

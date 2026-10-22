@@ -17,7 +17,7 @@ or execute anything. `--module DIRECTORY` selects that module; `--modules id,id`
 Repeat either source option to supply more directories. Required dependencies are resolved from
 installed modules and available catalogs and printed in the plan. No network download occurs.
 Use `--profile minimal|continuity|complete` during initial installation; Complete has a fixed list
-of eight official modules and never automatically activates external discoveries.
+of nine official modules and never automatically activates external discoveries.
 
 ## Manifest version 1
 
@@ -84,6 +84,14 @@ The doctor checks dependencies, managed hashes/modes, mirrored skills and declar
 field, and `links` requires every relative Markdown link to name an existing file. A `warn` check is
 reported by the doctor without failing it, and installation, add and update skip it. It checks no
 external services and makes no claim about the agent following instructions.
+
+## Knowledge module
+
+`knowledge` installs two editable indexes: `{{TASKS_DIR}}/APP.md` routes code flows
+(flow → `doc/app/<flow>.md` → keywords) and `{{TASKS_DIR}}/DOC.md` routes verified domain facts
+(theme → `doc/<theme>.md` → when to read). They hold project-specific knowledge the model cannot
+know, never generic stack documentation. The doctor warns when an index exceeds 8 KiB, a theme
+exceeds 16 KiB or an index links to a missing file.
 
 ## Preservation and lifecycle
 

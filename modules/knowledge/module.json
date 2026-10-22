@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "knowledge",
+  "version": "1.0.0",
+  "description": "Project knowledge indexes: application flows and domain facts",
+  "requires": {},
+  "skills": [],
+  "files": [
+    {
+      "source": "files/APP.md",
+      "target": "{{TASKS_DIR}}/APP.md",
+      "editable": true
+    },
+    {
+      "source": "files/DOC.md",
+      "target": "{{TASKS_DIR}}/DOC.md",
+      "editable": true
+    }
+  ],
+  "rules": [
+    {
+      "id": "main",
+      "source": "rules/main.md",
+      "point": "session-start"
+    }
+  ],
+  "hooks": [],
+  "checks": [
+    {
+      "path": "{{TASKS_DIR}}/APP.md",
+      "type": "file",
+      "maxBytes": 8192,
+      "level": "warn"
+    },
+    {
+      "path": "{{TASKS_DIR}}/DOC.md",
+      "type": "file",
+      "maxBytes": 8192,
+      "level": "warn"
+    },
+    {
+      "pattern": "{{TASKS_DIR}}/doc/app/*.md",
+      "type": "file",
+      "maxBytes": 16384,
+      "level": "warn"
+    },
+    {
+      "pattern": "{{TASKS_DIR}}/doc/*.md",
+      "type": "file",
+      "maxBytes": 16384,
+      "level": "warn"
+    },
+    {
+      "path": "{{TASKS_DIR}}/APP.md",
+      "type": "links",
+      "level": "warn"
+    },
+    {
+      "path": "{{TASKS_DIR}}/DOC.md",
+      "type": "links",
+      "level": "warn"
+    }
+  ]
+}

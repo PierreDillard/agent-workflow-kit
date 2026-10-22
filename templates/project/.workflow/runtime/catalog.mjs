@@ -2,7 +2,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { assertKeys, readJson, safePath } from './paths.mjs';
 
-export const officialModules = ['tasks', 'memory', 'continuity', 'quality', 'bugs', 'reporting', 'exploration', 'learning'];
+export const officialModules = ['tasks', 'memory', 'continuity', 'quality', 'bugs', 'reporting', 'exploration', 'learning', 'knowledge'];
 const moduleIdPattern = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const versionPattern = /^\d+\.\d+\.\d+$/;
 const points = ['session-start', 'task-validation', 'before-handoff'];

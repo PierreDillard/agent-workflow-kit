@@ -8,7 +8,7 @@
 Less context to repeat, clear task tracking, and decisions preserved between sessions.
 Choose only the modules you need and adapt them to your project.
 
-**Claude Code · Codex · Copilot · 8 optional modules · Customizable**
+**Claude Code · Codex · Copilot · 9 optional modules · Customizable**
 
 ## Supported coding agents
 
@@ -128,6 +128,7 @@ project's `.gitignore` is not touched. Hooks stay silent in clones that do not h
 | Reporting (`reporting`) | Weekly goals and progress reports |
 | Exploration (`exploration`) | Help clarifying ideas before development |
 | Learning (`learning`) | Explanations and guidance to help you learn |
+| Knowledge (`knowledge`) | Indexes of your app's flows and domain facts, read one section at a time |
 
 For a custom first installation:
 
