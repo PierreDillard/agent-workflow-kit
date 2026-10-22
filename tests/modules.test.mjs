@@ -329,6 +329,17 @@ test('all official modules have a unique skill owner; all profiles and independe
   assert.equal(state(complete).modules.length, 8);
 });
 
+test('every core and official module skill description names when to use it', () => {
+  const skillDirectories = [join(repository, 'core/skills')];
+  for (const moduleId of readdirSync(join(repository, 'modules'))) skillDirectories.push(join(repository, 'modules', moduleId, 'skills'));
+  const missingTriggers = [];
+  for (const skillDirectory of skillDirectories.filter(existsSync)) for (const skillName of readdirSync(skillDirectory)) {
+    const description = readFileSync(join(skillDirectory, skillName, 'SKILL.md'), 'utf8').match(/^description:(.*)$/m)?.[1] ?? '';
+    if (!/\b(Use (when|before|after|for)|Utiliser)\b/i.test(description)) missingTriggers.push(skillName);
+  }
+  assert.deepEqual(missingTriggers.sort(), []);
+});
+
 test('installation lock and required precommit are checked without overwriting project data', context => {
   const setup = fixture(context, 'REQUIRE_PRECOMMIT=true\n');
   const before = snapshot(setup.project);

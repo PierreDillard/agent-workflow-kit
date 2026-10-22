@@ -1,6 +1,6 @@
 ---
 name: ants
-description: Structure implementation as small, atomic, traceable changes with one owner, one observable signal and an updated task record.
+description: Structure implementation as small, atomic, traceable changes with one owner, one observable signal and an updated task record. Use when planning, implementing, reviewing or refactoring code, especially to avoid big patches, unrelated refactors, duplicated state or unclear ownership.
 ---
 
 # ANTS

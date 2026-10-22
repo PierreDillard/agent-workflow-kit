@@ -1,6 +1,6 @@
 ---
 name: branch-router
-description: Resolve the current Git branch, its task workspace, merge direction and configured branch policy before any versioned change or merge.
+description: Resolve the current Git branch, its task workspace, merge direction and configured branch policy before any versioned change or merge. Use before any versioned change, branch creation or merge, and whenever work touches shared files or the default branch.
 ---
 
 # Branch Router

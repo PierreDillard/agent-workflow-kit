@@ -1,6 +1,6 @@
 ---
 name: write-task
-description: Create or restructure ANTS task files at the resolved effort location with atomic steps, observable signals and an explicit trace.
+description: Create or restructure ANTS task files at the resolved effort location with atomic steps, observable signals and an explicit trace. Use when asked to create, plan or restructure tasks for a feature, effort or branch; not for status-only updates.
 ---
 
 # Write Task

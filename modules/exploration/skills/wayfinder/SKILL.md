@@ -1,6 +1,6 @@
 ---
 name: wayfinder
-description: Map a multi-session initiative into decision tickets, resolving one frontier ticket at a time before implementation tasks begin.
+description: Map a multi-session initiative into decision tickets, resolving one frontier ticket at a time before implementation tasks begin. Use when the user says "wayfinder" or "plan this as tickets", or brings a foggy idea bigger than one session; not for a single well-scoped feature (use write-task).
 disable-model-invocation: true
 ---
 

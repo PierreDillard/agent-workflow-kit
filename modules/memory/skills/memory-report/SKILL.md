@@ -1,6 +1,6 @@
 ---
 name: memory-report
-description: Promote only proven reusable findings into branch or project memory while keeping raw evidence in its canonical task or bug record.
+description: Promote only proven reusable findings into branch or project memory while keeping raw evidence in its canonical task or bug record. Use after a bug fix, a failed fix or a regression investigation, or when the user asks to update project memory.
 ---
 
 # Memory Report

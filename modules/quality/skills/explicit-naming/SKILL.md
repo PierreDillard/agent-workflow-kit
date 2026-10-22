@@ -1,6 +1,6 @@
 ---
 name: explicit-naming
-description: Enforce explicit, readable variable and function names when writing or reviewing TypeScript, JavaScript or React code.
+description: Enforce explicit, readable variable and function names when writing or reviewing TypeScript, JavaScript or React code. Use when writing or reviewing any such code, including callbacks, loop variables and destructured values.
 ---
 
 # Explicit Naming

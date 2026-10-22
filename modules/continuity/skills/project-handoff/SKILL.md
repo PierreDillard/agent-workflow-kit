@@ -1,6 +1,6 @@
 ---
 name: project-handoff
-description: Create or update the current branch handoff so another session can resume from its task, memory and verified state.
+description: Create or update the current branch handoff so another session can resume from its task, memory and verified state. Use before ending a session or clearing context with unfinished work, or when the user asks for a handoff.
 ---
 
 # Project Handoff

@@ -1,6 +1,6 @@
 ---
 name: bug-fix-trace
-description: Confirm a bug hypothesis at runtime, add a focused regression test when feasible, and retain the incident in the thematic bug ledger.
+description: Confirm a bug hypothesis at runtime, add a focused regression test when feasible, and retain the incident in the thematic bug ledger. Use when diagnosing a functional bug, after fixing one, or when the user says "trace this bug" or "log this fix"; not for pure lint or formatting fixes.
 ---
 
 # Bug Fix Trace

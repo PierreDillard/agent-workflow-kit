@@ -1,6 +1,6 @@
 ---
 name: bug-triage
-description: Triage a reported defect by observable impact, reproducibility, ownership and existing thematic evidence before diagnosis or implementation.
+description: Triage a reported defect by observable impact, reproducibility, ownership and existing thematic evidence before diagnosis or implementation. Use when a defect or regression is reported, before diagnosing it or writing any fix.
 ---
 
 # Bug Triage

@@ -1,6 +1,6 @@
 ---
 name: resource-ownership
-description: Identify the owner of shared sockets, workers, subscriptions and timers before writing connect, disconnect or cleanup behavior.
+description: Identify the owner of shared sockets, workers, subscriptions and timers before writing connect, disconnect or cleanup behavior. Use when writing or reviewing cleanup code that touches a shared resource or singleton, or when removing one consumer freezes or breaks another.
 ---
 
 # Resource Ownership
