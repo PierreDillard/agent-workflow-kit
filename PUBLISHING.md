@@ -54,7 +54,8 @@ Change `name` in `package.json` and the commands in README/docs together if the 
    automatically) so that `npx ants-kit@latest` keeps resolving to the last
    stable release; `npx ants-kit@next` resolves to the latest prerelease.
 
-`npx github:PierreDillard/agent-workflow-kit` installs from the default branch with the same CLI.
+Maintainer note: `npx github:PierreDillard/agent-workflow-kit` runs the unreleased default branch for
+testing; it is not a user install path (see README).
 
 ## Current release posture
 
