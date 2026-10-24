@@ -5,6 +5,7 @@ import { assertKeys, readJson, safePath } from './paths.mjs';
 export const officialModules = ['tasks', 'memory', 'continuity', 'quality', 'bugs', 'reporting', 'exploration', 'learning', 'knowledge'];
 const moduleIdPattern = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const versionPattern = /^\d+\.\d+\.\d+$/;
+const dependencyPattern = /^(?:\*|\^?\d+\.\d+\.\d+)$/;
 const points = ['session-start', 'task-validation', 'before-handoff'];
 
 export function validateManifest(manifest) {
@@ -16,7 +17,7 @@ export function validateManifest(manifest) {
   }
   assertKeys(manifest.requires ?? {}, Object.keys(manifest.requires ?? {}), 'requires');
   for (const [moduleId, version] of Object.entries(manifest.requires ?? {})) {
-    if (!moduleIdPattern.test(moduleId) || (version !== '*' && !versionPattern.test(version))) throw new Error(`Invalid dependency: ${moduleId}`);
+    if (!moduleIdPattern.test(moduleId) || typeof version !== 'string' || !dependencyPattern.test(version)) throw new Error(`Invalid dependency: ${moduleId}`);
   }
   assertKeys(manifest.config ?? {}, Object.keys(manifest.config ?? {}), 'config');
   for (const [key, value] of Object.entries(manifest.config ?? {})) {
@@ -93,6 +94,15 @@ export function loadCatalog(moduleDirectories, explicitSources) {
   return { catalog, explicit };
 }
 
+// `*` accepts any version, `^X.Y.Z` the same major from X.Y.Z onwards, and a bare version only itself.
+export function satisfiesVersion(version, required) {
+  if (required === '*') return true;
+  if (!required.startsWith('^')) return version === required;
+  const [major, minor, patch] = version.split('.').map(Number);
+  const [requiredMajor, requiredMinor, requiredPatch] = required.slice(1).split('.').map(Number);
+  return major === requiredMajor && (minor > requiredMinor || (minor === requiredMinor && patch >= requiredPatch));
+}
+
 export function resolveModules(catalog, selected, installed = []) {
   const known = new Map(installed.map(module => [module.id, module]));
   const ordered = [];
@@ -101,7 +111,7 @@ export function resolveModules(catalog, selected, installed = []) {
   function visit(moduleId, requiredVersion = '*') {
     const manifest = known.get(moduleId) ?? catalog.get(moduleId)?.manifest;
     if (!manifest) throw new Error(`Missing module dependency: ${moduleId}`);
-    if (requiredVersion !== '*' && manifest.version !== requiredVersion) throw new Error(`Incompatible version: ${moduleId} requires ${requiredVersion}, found ${manifest.version}`);
+    if (!satisfiesVersion(manifest.version, requiredVersion)) throw new Error(`Incompatible version: ${moduleId} requires ${requiredVersion}, found ${manifest.version}`);
     if (visiting.has(moduleId)) throw new Error(`Module dependency cycle: ${moduleId}`);
     if (visited.has(moduleId)) return;
     visiting.add(moduleId);

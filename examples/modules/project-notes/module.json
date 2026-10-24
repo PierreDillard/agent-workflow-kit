@@ -3,7 +3,7 @@
   "id": "project-notes",
   "version": "1.0.0",
   "description": "Keep a small project notebook without enabling weekly reporting",
-  "requires": { "memory": "1.1.0" },
+  "requires": { "memory": "^1.1.0" },
   "config": { "title": "Project notes" },
   "skills": [{ "name": "project-notes", "source": "skills/project-notes" }],
   "files": [{ "source": "templates/notes.md", "target": "{{TASKS_DIR}}/notes/README.md", "editable": true }],

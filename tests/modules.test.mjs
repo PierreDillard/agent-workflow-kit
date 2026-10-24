@@ -6,7 +6,7 @@ import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { installOrAdd } from '../templates/project/.workflow/runtime/manage.mjs';
 import { updateKit } from '../templates/project/.workflow/runtime/update.mjs';
-import { loadCatalog, officialModules } from '../templates/project/.workflow/runtime/catalog.mjs';
+import { loadCatalog, officialModules, resolveModules } from '../templates/project/.workflow/runtime/catalog.mjs';
 
 const repository = resolve(new URL('..', import.meta.url).pathname);
 // Fixtures use a nested TASKS_DIR with spaces; the kit lives inside it.
@@ -79,7 +79,10 @@ test('minimal: selected capabilities only, project context preserved, dry run no
   const installedWriteTask = read(setup, '.claude/skills/write-task/SKILL.md');
   assert.equal(installedWriteTask, sourceWriteTask);
   assert.equal(read(setup, '.codex/skills/write-task/SKILL.md'), sourceWriteTask);
-  assert.match(installedWriteTask, /for every remaining step/);
+  assert.match(installedWriteTask, /\[templates\.md\]\(references\/templates\.md\)/);
+  const installedTemplates = read(setup, '.claude/skills/write-task/references/templates.md');
+  assert.equal(installedTemplates, rendered(readFileSync(join(repository, 'modules/tasks/skills/write-task/references/templates.md'), 'utf8')));
+  assert.match(installedTemplates, /for every remaining step/);
   assert.equal(existsSync(join(setup.project, '.agents')), false);
   assert.match(read(setup, 'CLAUDE.md'), /^# Local rules/);
   assert.match(read(setup, 'AGENTS.md'), /^# Agent rules/);
@@ -268,9 +271,26 @@ test('module hooks never execute in discovery, dry run or install; execute at se
   assert.match(command('bash', [join(setup.project, kit, 'hooks/show-handoff.sh')]), /EXTERNAL_HOOK_RAN/);
 });
 
+test('module dependencies accept compatible versions of the same major and refuse anything else', () => {
+  const manifest = (id, version, requires) => ({ schemaVersion: 1, id, version, description: `${id} test module`, requires, skills: [] });
+  const resolved = (required, available) => resolveModules(new Map([
+    ['memory', { manifest: manifest('memory', available) }],
+    ['project-notes', { manifest: manifest('project-notes', '1.0.0', { memory: required }) }],
+  ]), ['project-notes']).map(module => `${module.id}@${module.version}`);
+
+  for (const [required, available] of [['^1.1.0', '1.1.0'], ['^1.1.0', '1.1.1'], ['^1.1.0', '1.2.0'], ['*', '2.0.0'], ['1.1.0', '1.1.0']]) {
+    assert.deepEqual(resolved(required, available), [`memory@${available}`, 'project-notes@1.0.0'], `${required} / ${available}`);
+  }
+  for (const [required, available] of [['^1.1.0', '1.0.9'], ['^1.1.0', '2.0.0'], ['^2.0.0', '1.9.9'], ['1.1.0', '1.1.1']]) {
+    assert.throws(() => resolved(required, available), /Incompatible version/, `${required} / ${available}`);
+  }
+});
+
 for (const [label, overrides, expected] of [
   ['missing dependency', { requires: { missing: '*' } }, /Missing module dependency/],
   ['incompatible dependency', { requires: { memory: '99.0.0' } }, /Incompatible version/],
+  ['incompatible dependency major', { requires: { memory: '^99.0.0' } }, /Incompatible version/],
+  ['unsupported dependency range', { requires: { memory: '~1.1.0' } }, /Invalid dependency/],
   ['cycle', { requires: { 'invalid-module': '*' } }, /cycle/],
   ['unknown field', { surprise: true }, /Unknown manifest field/],
   ['reserved destination', { files: [{ source: 'payload.md', target: 'AGENTS.md' }] }, /Reserved target/],
@@ -378,6 +398,21 @@ test('all official modules have a unique skill owner; all profiles and independe
   }
   const complete = fixture(context); install(complete, ['--profile', 'complete']);
   assert.equal(state(complete).modules.length, 9);
+});
+
+test('installed skills ship the files their SKILL.md links to', context => {
+  const setup = fixture(context); install(setup, ['--profile', 'complete']);
+  const skillsRoot = join(setup.project, '.claude/skills');
+  const names = readdirSync(skillsRoot);
+  assert.ok(names.includes('code-simplification') && names.includes('write-task') && names.includes('teach'), names.join(', '));
+  for (const name of names) {
+    // Fenced blocks are templates for user files, not links to kit content.
+    const prose = readFileSync(join(skillsRoot, name, 'SKILL.md'), 'utf8').replace(/^```[\s\S]*?^```/gm, '');
+    const references = [...prose.matchAll(/\]\(([^)<>:\s]+\.md)(?:#[^)]*)?\)/g)].map(match => match[1]);
+    for (const reference of references) {
+      assert.equal(existsSync(resolve(skillsRoot, name, reference)), true, `${name} -> ${reference}`);
+    }
+  }
 });
 
 test('every core and official module skill description names when to use it', () => {

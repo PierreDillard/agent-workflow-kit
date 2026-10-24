@@ -27,7 +27,7 @@ of nine official modules and never automatically activates external discoveries.
   "id": "project-notes",
   "version": "1.0.0",
   "description": "A small notebook",
-  "requires": { "memory": "1.1.0" },
+  "requires": { "memory": "^1.1.0" },
   "config": { "title": "Project notes" },
   "skills": [{ "name": "project-notes", "source": "skills/project-notes" }],
   "files": [{ "source": "templates/notes.md", "target": "{{TASKS_DIR}}/notes/README.md", "editable": true }],
@@ -37,8 +37,9 @@ of nine official modules and never automatically activates external discoveries.
 ```
 
 Unknown fields are rejected. IDs use lowercase letters, digits and single hyphens; `core` is reserved.
-Versions use `major.minor.patch`. Dependencies accept an exact version or `*`; version ranges are
-not implemented. Missing dependencies, cycles, duplicate IDs and incompatible versions fail before
+Versions use `major.minor.patch`. Dependencies accept `^major.minor.patch` (recommended: the same
+major, from that version onwards), an exact version, or `*`; no other range is implemented.
+Missing dependencies, cycles, duplicate IDs and incompatible versions fail before
 writing any destination. One component/file has one owner; destination collisions are errors.
 
 | Field | Contract |
