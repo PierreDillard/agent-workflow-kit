@@ -79,7 +79,10 @@ test('minimal: selected capabilities only, project context preserved, dry run no
   const installedWriteTask = read(setup, '.claude/skills/write-task/SKILL.md');
   assert.equal(installedWriteTask, sourceWriteTask);
   assert.equal(read(setup, '.codex/skills/write-task/SKILL.md'), sourceWriteTask);
-  assert.match(installedWriteTask, /for every remaining step/);
+  assert.match(installedWriteTask, /\[templates\.md\]\(references\/templates\.md\)/);
+  const installedTemplates = read(setup, '.claude/skills/write-task/references/templates.md');
+  assert.equal(installedTemplates, rendered(readFileSync(join(repository, 'modules/tasks/skills/write-task/references/templates.md'), 'utf8')));
+  assert.match(installedTemplates, /for every remaining step/);
   assert.equal(existsSync(join(setup.project, '.agents')), false);
   assert.match(read(setup, 'CLAUDE.md'), /^# Local rules/);
   assert.match(read(setup, 'AGENTS.md'), /^# Agent rules/);
@@ -374,6 +377,21 @@ test('all official modules have a unique skill owner; all profiles and independe
   }
   const complete = fixture(context); install(complete, ['--profile', 'complete']);
   assert.equal(state(complete).modules.length, 8);
+});
+
+test('installed skills ship the files their SKILL.md links to', context => {
+  const setup = fixture(context); install(setup, ['--profile', 'complete']);
+  const skillsRoot = join(setup.project, '.claude/skills');
+  const names = readdirSync(skillsRoot);
+  assert.ok(names.includes('code-simplification') && names.includes('write-task') && names.includes('teach'), names.join(', '));
+  for (const name of names) {
+    // Fenced blocks are templates for user files, not links to kit content.
+    const prose = readFileSync(join(skillsRoot, name, 'SKILL.md'), 'utf8').replace(/^```[\s\S]*?^```/gm, '');
+    const references = [...prose.matchAll(/\]\(([^)<>:\s]+\.md)(?:#[^)]*)?\)/g)].map(match => match[1]);
+    for (const reference of references) {
+      assert.equal(existsSync(resolve(skillsRoot, name, reference)), true, `${name} -> ${reference}`);
+    }
+  }
 });
 
 test('every core and official module skill description names when to use it', () => {
