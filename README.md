@@ -34,7 +34,7 @@ Your request → a task → verifiable steps → useful decisions preserved
 ```
 
 Add Continuity to resume work in another session, Quality for more thorough checks,
-or Learning to help you understand the project.
+Knowledge to map your code flows and domain facts, or Learning to help you understand the project.
 
 The shared `project-workflow` skill routes questions, audits, planning, bugs, implementation
 and merges to the skills in your installed modules. It preserves local project rules and reports
@@ -130,6 +130,12 @@ project's `.gitignore` is not touched. Hooks stay silent in clones that do not h
 | Learning (`learning`) | Explanations and guidance to help you learn |
 | Knowledge (`knowledge`) | Indexes of your app's flows and domain facts, read one section at a time |
 
+**Knowledge** adds two indexes to `tasks/`: `APP.md` maps each code flow to its doc in `doc/app/`
+with the keywords that lead to it, and `DOC.md` maps each verified domain fact to its theme in `doc/`.
+Your assistant reads the matching index line, then only the matching section, instead of searching
+the whole codebase. It writes a flow doc once it has investigated the same flow twice. The indexes hold
+what the model cannot know about your project, never generic framework documentation.
+
 For a custom first installation:
 
 ```bash
@@ -149,6 +155,7 @@ To add a module to a project where the kit is already installed:
 ```bash
 npx ants-kit add reporting --dry-run
 npx ants-kit add reporting
+npx ants-kit add knowledge
 ```
 
 ## Update an existing installation
