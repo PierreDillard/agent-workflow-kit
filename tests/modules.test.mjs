@@ -287,7 +287,7 @@ test('module dependencies accept compatible versions of the same major and refus
 });
 
 for (const [label, overrides, expected] of [
-  ['missing dependency', { requires: { missing: '*' } }, /Missing module dependency/],
+  ['missing dependency', { requires: { missing: '*' } }, /Missing module dependency: missing \(required by /],
   ['incompatible dependency', { requires: { memory: '99.0.0' } }, /Incompatible version/],
   ['incompatible dependency major', { requires: { memory: '^99.0.0' } }, /Incompatible version/],
   ['unsupported dependency range', { requires: { memory: '~1.1.0' } }, /Invalid dependency/],
@@ -360,7 +360,7 @@ test('mid-add failure restores files, inventory, shared rules, directories and u
 
 test('unknown selection and invalid configuration leave first install untouched', context => {
   const setup = fixture(context); const before = snapshot(setup.project);
-  assert.match(install(setup, ['--modules', 'unknown'], false), /Missing module dependency/);
+  assert.match(install(setup, ['--modules', 'unknown'], false), /Unknown module: unknown \(not in the installed modules or available catalogs\)/);
   assert.match(install(setup, ['--profile', 'unknown'], false), /Unknown profile/);
   assert.deepEqual(snapshot(setup.project), before);
 });

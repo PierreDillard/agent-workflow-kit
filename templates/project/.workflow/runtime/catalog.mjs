@@ -108,14 +108,15 @@ export function resolveModules(catalog, selected, installed = []) {
   const ordered = [];
   const visiting = new Set();
   const visited = new Set();
-  function visit(moduleId, requiredVersion = '*') {
+  function visit(moduleId, requiredVersion = '*', requiredBy = null) {
     const manifest = known.get(moduleId) ?? catalog.get(moduleId)?.manifest;
-    if (!manifest) throw new Error(`Missing module dependency: ${moduleId}`);
+    if (!manifest && requiredBy) throw new Error(`Missing module dependency: ${moduleId} (required by ${requiredBy})`);
+    if (!manifest) throw new Error(`Unknown module: ${moduleId} (not in the installed modules or available catalogs)`);
     if (!satisfiesVersion(manifest.version, requiredVersion)) throw new Error(`Incompatible version: ${moduleId} requires ${requiredVersion}, found ${manifest.version}`);
     if (visiting.has(moduleId)) throw new Error(`Module dependency cycle: ${moduleId}`);
     if (visited.has(moduleId)) return;
     visiting.add(moduleId);
-    for (const [dependency, version] of Object.entries(manifest.requires ?? {}).sort()) visit(dependency, version);
+    for (const [dependency, version] of Object.entries(manifest.requires ?? {}).sort()) visit(dependency, version, moduleId);
     visiting.delete(moduleId);
     visited.add(moduleId);
     ordered.push(manifest);
