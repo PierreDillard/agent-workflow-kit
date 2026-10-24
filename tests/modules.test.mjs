@@ -23,7 +23,8 @@ function command(executable, args, expectedSuccess = true, environment = {}) {
 
 function fixture(context, configuration = '') {
   const root = mkdtempSync(join(tmpdir(), 'workflow-module-test-'));
-  context.after(() => rmSync(root, { recursive: true, force: true }));
+  // Retries absorb a Git process still writing in a fixture repository when cleanup starts.
+  context.after(() => rmSync(root, { recursive: true, force: true, maxRetries: 5 }));
   const project = join(root, 'project with spaces');
   const user = join(root, 'user with spaces');
   mkdirSync(project); mkdirSync(user);
@@ -287,7 +288,7 @@ test('module dependencies accept compatible versions of the same major and refus
 });
 
 for (const [label, overrides, expected] of [
-  ['missing dependency', { requires: { missing: '*' } }, /Missing module dependency/],
+  ['missing dependency', { requires: { missing: '*' } }, /Missing module dependency: missing \(required by /],
   ['incompatible dependency', { requires: { memory: '99.0.0' } }, /Incompatible version/],
   ['incompatible dependency major', { requires: { memory: '^99.0.0' } }, /Incompatible version/],
   ['unsupported dependency range', { requires: { memory: '~1.1.0' } }, /Invalid dependency/],
@@ -360,7 +361,7 @@ test('mid-add failure restores files, inventory, shared rules, directories and u
 
 test('unknown selection and invalid configuration leave first install untouched', context => {
   const setup = fixture(context); const before = snapshot(setup.project);
-  assert.match(install(setup, ['--modules', 'unknown'], false), /Missing module dependency/);
+  assert.match(install(setup, ['--modules', 'unknown'], false), /Unknown module: unknown \(not in the installed modules or available catalogs\)/);
   assert.match(install(setup, ['--profile', 'unknown'], false), /Unknown profile/);
   assert.deepEqual(snapshot(setup.project), before);
 });
@@ -458,7 +459,7 @@ function updateFixture(context, extra = [], configuration = '') {
   command('git', ['-C', source, 'init', '-q']);
   command('git', ['-C', source, 'add', '.']);
   command('git', ['-C', source, '-c', 'user.name=Workflow fixture', '-c', 'user.email=fixture@example.invalid',
-    '-c', 'commit.gpgsign=false', 'commit', '-qm', 'Fixture baseline']);
+    '-c', 'commit.gpgsign=false', '-c', 'gc.auto=0', '-c', 'maintenance.auto=false', 'commit', '-qm', 'Fixture baseline']);
   const workflow = join(source, 'core/skills/project-workflow/SKILL.md');
   writeFileSync(workflow, '---\nname: project-workflow\ndescription: Previous fixture router.\n---\n\nPrevious fixture route.\n');
   command('bash', [join(source, 'install.sh'), '--target', setup.project, '--user-root', setup.user,

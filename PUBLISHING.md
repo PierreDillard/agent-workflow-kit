@@ -59,6 +59,6 @@ testing; it is not a user install path (see README).
 
 ## Current release posture
 
-`VERSION` is `0.2.0`, the first stable release on npm (`0.2.0-dev` was the initial prerelease).
+`VERSION` is `0.3.0`, which adds the Knowledge module; `0.2.0` was the first stable release on npm.
 Fresh Claude/Codex/Copilot discovery checks are still to be recorded. Linux is the tested platform. The project is MIT;
 `THIRD_PARTY_NOTICES.md` retains the notices for the skills attributed to Matt Pocock.
