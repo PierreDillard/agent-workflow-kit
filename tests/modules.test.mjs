@@ -6,7 +6,7 @@ import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { installOrAdd } from '../templates/project/.workflow/runtime/manage.mjs';
 import { updateKit } from '../templates/project/.workflow/runtime/update.mjs';
-import { loadCatalog, officialModules } from '../templates/project/.workflow/runtime/catalog.mjs';
+import { loadCatalog, officialModules, resolveModules } from '../templates/project/.workflow/runtime/catalog.mjs';
 
 const repository = resolve(new URL('..', import.meta.url).pathname);
 // Fixtures use a nested TASKS_DIR with spaces; the kit lives inside it.
@@ -247,9 +247,26 @@ test('module hooks never execute in discovery, dry run or install; execute at se
   assert.match(command('bash', [join(setup.project, kit, 'hooks/show-handoff.sh')]), /EXTERNAL_HOOK_RAN/);
 });
 
+test('module dependencies accept compatible versions of the same major and refuse anything else', () => {
+  const manifest = (id, version, requires) => ({ schemaVersion: 1, id, version, description: `${id} test module`, requires, skills: [] });
+  const resolved = (required, available) => resolveModules(new Map([
+    ['memory', { manifest: manifest('memory', available) }],
+    ['project-notes', { manifest: manifest('project-notes', '1.0.0', { memory: required }) }],
+  ]), ['project-notes']).map(module => `${module.id}@${module.version}`);
+
+  for (const [required, available] of [['^1.1.0', '1.1.0'], ['^1.1.0', '1.1.1'], ['^1.1.0', '1.2.0'], ['*', '2.0.0'], ['1.1.0', '1.1.0']]) {
+    assert.deepEqual(resolved(required, available), [`memory@${available}`, 'project-notes@1.0.0'], `${required} / ${available}`);
+  }
+  for (const [required, available] of [['^1.1.0', '1.0.9'], ['^1.1.0', '2.0.0'], ['^2.0.0', '1.9.9'], ['1.1.0', '1.1.1']]) {
+    assert.throws(() => resolved(required, available), /Incompatible version/, `${required} / ${available}`);
+  }
+});
+
 for (const [label, overrides, expected] of [
   ['missing dependency', { requires: { missing: '*' } }, /Missing module dependency/],
   ['incompatible dependency', { requires: { memory: '99.0.0' } }, /Incompatible version/],
+  ['incompatible dependency major', { requires: { memory: '^99.0.0' } }, /Incompatible version/],
+  ['unsupported dependency range', { requires: { memory: '~1.1.0' } }, /Invalid dependency/],
   ['cycle', { requires: { 'invalid-module': '*' } }, /cycle/],
   ['unknown field', { surprise: true }, /Unknown manifest field/],
   ['reserved destination', { files: [{ source: 'payload.md', target: 'AGENTS.md' }] }, /Reserved target/],
