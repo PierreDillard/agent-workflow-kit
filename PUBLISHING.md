@@ -59,6 +59,7 @@ testing; it is not a user install path (see README).
 
 ## Current release posture
 
-`VERSION` is `0.3.0`, which adds the Knowledge module; `0.2.0` was the first stable release on npm.
+`VERSION` is `0.4.0`, which makes the index/annex document pattern mandatory (the `doc-pattern`
+core skill, the base-rules clause and the `index` check); `0.3.0` added the Knowledge module.
 Fresh Claude/Codex/Copilot discovery checks are still to be recorded. Linux is the tested platform. The project is MIT;
 `THIRD_PARTY_NOTICES.md` retains the notices for the skills attributed to Matt Pocock.

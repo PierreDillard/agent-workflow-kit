@@ -224,7 +224,7 @@ bash agent-workflow-kit/module.sh update --target /path/to/my-project
 
 ## Project status
 
-**Version `0.3.0`, published on npm as [`ants-kit`](https://www.npmjs.com/package/ants-kit).**
+**Version `0.4.0`, published on npm as [`ants-kit`](https://www.npmjs.com/package/ants-kit).**
 
 Local tests, GitHub CI and publication archive checks pass; Linux is the tested platform. Checks in
 fresh Claude Code, Codex, and Copilot sessions are still to be recorded.

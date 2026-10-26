@@ -1,6 +1,6 @@
 {
   "name": "ants-kit",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Modular task, memory and quality workflow for Claude Code, Codex and Copilot, installed into a single project directory.",
   "license": "MIT",
   "author": "Pierre Dillard",
