@@ -55,8 +55,8 @@ export function validateManifest(manifest) {
     assertKeys(check, ['path', 'pattern', 'type', 'maxBytes', 'level'], 'check');
     // Patterns match user-created files and links point to user content: the kit can only warn about them.
     if ((check.path === undefined) === (check.pattern === undefined) || typeof (check.path ?? check.pattern) !== 'string' ||
-        !['file', 'json', 'timezone', 'links'].includes(check.type) || !['fail', 'warn'].includes(check.level ?? 'fail') ||
-        ((check.pattern !== undefined || check.type === 'links') && check.level !== 'warn') ||
+        !['file', 'json', 'timezone', 'links', 'index'].includes(check.type) || !['fail', 'warn'].includes(check.level ?? 'fail') ||
+        ((check.pattern !== undefined || check.type === 'links' || check.type === 'index') && check.level !== 'warn') ||
         (check.maxBytes !== undefined && (!Number.isInteger(check.maxBytes) || check.maxBytes < 1))) throw new Error('Invalid check');
   }
   return manifest;
@@ -65,9 +65,17 @@ export function validateManifest(manifest) {
 // The single verification of a declarative check, shared by install, add, update and doctor.
 export function verifyCheck(check, path, content, projectRoot) {
   if (check.maxBytes && content.length > check.maxBytes) throw new Error(`Size limit exceeded: ${path}`);
-  if (check.type === 'links') {
+  if (check.type === 'links' || check.type === 'index') {
     const broken = relativeLinks(content.toString()).filter(target => !existsSync(join(resolve(projectRoot), dirname(path), target)));
     if (broken.length) throw new Error(`Broken link in ${path}: ${broken.join(', ')}`);
+  }
+  // An index routes, it never holds content: every table row must link to the annex that owns it.
+  if (check.type === 'index') {
+    const lines = content.toString().split('\n').map(line => line.trim());
+    const separator = line => /^\|[\s:|-]+\|$/.test(line);
+    const unrouted = lines.flatMap((line, position) => line.startsWith('|') && !separator(line) &&
+      !separator(lines[position + 1] ?? '') && !/\]\([^)]+\)/.test(line) ? [position + 1] : []);
+    if (unrouted.length) throw new Error(`Index row without annex link in ${path}: line ${unrouted.join(', ')}`);
   }
   if (check.type === 'json' || check.type === 'timezone') {
     const value = JSON.parse(content);

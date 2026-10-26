@@ -31,3 +31,5 @@ Use this ledger shape:
 
 One-off incidents remain canonical in the bug ledger. Promote only a verified prevention rule that
 applies beyond the affected area; raw logs and a one-off diagnosis do not belong in project memory.
+
+Write the trace in its thematic file and keep the index row to routing only, per `doc-pattern`.

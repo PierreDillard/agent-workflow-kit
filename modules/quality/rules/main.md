@@ -3,3 +3,4 @@ When growth or lifecycle risks apply, invoke `soak-readiness` before `write-task
 Close with `done-check`. Before every merge into `DEFAULT_BRANCH`, run `branch-router` then `review-gate`.
 Require an independent approve verdict for the exact source SHA; a source change invalidates approval.
 Perform only an explicitly authorized merge, then run `merge-integrity`.
+Before closing, check that documents written in this effort follow `doc-pattern` and repair violations.

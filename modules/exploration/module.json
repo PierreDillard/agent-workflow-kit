@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "exploration",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Exploration workflow capabilities",
   "requires": {
     "tasks": "*",

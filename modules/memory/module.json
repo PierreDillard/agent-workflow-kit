@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "memory",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Memory workflow capabilities",
   "requires": {},
   "skills": [
@@ -55,12 +55,12 @@
     },
     {
       "path": "{{TASKS_DIR}}/PROJECT_MEMORY.md",
-      "type": "links",
+      "type": "index",
       "level": "warn"
     },
     {
       "path": "{{TASKS_DIR}}/DECISIONS.md",
-      "type": "links",
+      "type": "index",
       "level": "warn"
     }
   ]

@@ -22,7 +22,7 @@ restatement of a bug record is never promotable.
 For a promotion, identify the logical subject before writing. Replace a superseded rule, remove
 obsolete contradictions and merge duplicates; add a rule only when no current rule covers it.
 Promoted rules link to their evidence instead of copying logs or narratives. Create a project memory
-theme only when none fits, then add one pointer to the project-memory index. Branch memory never
+theme only when none fits, then add one pointer to the project-memory index, per `doc-pattern`. Branch memory never
 overrides project memory; conflicts require an explicit decision.
 
 Memory is a current set of reusable rules, not a chronology. Remove a rule when its premise, API or

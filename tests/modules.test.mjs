@@ -11,7 +11,8 @@ import { loadCatalog, officialModules, resolveModules } from '../templates/proje
 const repository = resolve(new URL('..', import.meta.url).pathname);
 // Fixtures use a nested TASKS_DIR with spaces; the kit lives inside it.
 const kit = 'planning notes/tasks/.workflow';
-const rendered = text => text.replaceAll('{{KIT_DIR}}', kit);
+const tasksDirectory = 'planning notes/tasks';
+const rendered = text => text.replaceAll('{{KIT_DIR}}', kit).replaceAll('{{TASKS_DIR}}', tasksDirectory);
 
 function command(executable, args, expectedSuccess = true, environment = {}) {
   const result = spawnSync(executable, args, { cwd: repository, encoding: 'utf8', env: { ...process.env, ...environment } });
@@ -141,6 +142,42 @@ test('doctor warns, without failing, on oversized editable themes and indexes', 
   for (const path of oversized) assert.match(output, new RegExp(`warn  Size limit exceeded: planning notes/tasks/${path}`));
   assert.doesNotMatch(output, /small\.md/);
   assert.match(output, /0 failure\(s\), 4 warning\(s\)/);
+});
+
+test('document pattern: doc-pattern skill mirrored, mandatory clause composed, routing enforced', context => {
+  const setup = fixture(context);
+  install(setup, ['--modules', 'tasks,memory,bugs']);
+  const source = rendered(readFileSync(join(repository, 'core/skills/doc-pattern/SKILL.md'), 'utf8'));
+  for (const client of ['.claude', '.codex']) {
+    assert.equal(read(setup, join(client, 'skills/doc-pattern/SKILL.md')), source);
+    for (const reference of source.matchAll(/\]\(([^)]+\.md)\)/g)) {
+      assert.equal(existsSync(resolve(setup.project, client, 'skills/doc-pattern', reference[1])), true, reference[1]);
+    }
+  }
+  const rules = read(setup, `${kit}/PROJECT_RULES.md`);
+  assert.match(rules, /Mandatory writing pattern: every document written under `planning notes\/tasks`/);
+  assert.match(rules, /Use `doc-pattern` before creating, growing or splitting such a file/);
+  assert.match(read(setup, `${kit}/components.tsv`), /^doc-pattern\tproject-template/m);
+  // Every module that stores documents states the obligation in its composed rules.
+  for (const fragment of [/Task indexes and task files follow `doc-pattern`/, /apply `doc-pattern` to both/,
+    /`doc-pattern` governs these indexes and their themes/]) assert.match(rules, fragment);
+  assert.match(command('bash', [join(setup.project, kit, 'scripts/workflow-doctor.sh')]), /0 failure\(s\), 0 warning\(s\)/);
+});
+
+test('doctor warns on an index row carrying content instead of a route to its annex', context => {
+  const setup = fixture(context);
+  install(setup, ['--modules', 'tasks,memory,bugs']);
+  const tasks = join(setup.project, 'planning notes/tasks');
+  mkdirSync(join(tasks, 'memory'));
+  writeFileSync(join(tasks, 'memory/transport.md'), '# Transport\n');
+  writeFileSync(join(tasks, 'PROJECT_MEMORY.md'), [
+    '# Project Memory — lazy index', '', '| Theme | Read when | Memory |', '|---|---|---|',
+    '| Transport | reconnect | [transport.md](memory/transport.md) |',
+    '| Parsing | malformed frames | The parser rejects empty frames before validation. |', '',
+  ].join('\n'));
+  const output = command('bash', [join(setup.project, kit, 'scripts/workflow-doctor.sh')]);
+  assert.match(output, /warn  Index row without annex link in planning notes\/tasks\/PROJECT_MEMORY.md: line 6/);
+  assert.match(output, /0 failure\(s\), 1 warning\(s\)/);
 });
 
 test('doctor warns, without failing, on index links to missing files', context => {

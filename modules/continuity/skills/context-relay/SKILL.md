@@ -27,3 +27,6 @@ new multi-step task—also trigger it. State that this is a proxy, not a measure
 
 Never include secrets or a conversation dump in a handoff. The handoff is resumption state; its
 evidence remains in canonical project records.
+
+Apply `doc-pattern` to the relay document: sectioned annex, pointers to the owning task and
+memory theme rather than inlined evidence.

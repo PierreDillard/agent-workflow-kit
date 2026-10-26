@@ -9,7 +9,8 @@ Use `branch-router` to identify the target implementation branch when known. Res
 location using [Task placement](<../../../{{KIT_DIR}}/PROJECT_RULES.md#task-placement>).
 
 Create `README.md` as a derived navigation index before the first task. Read only the index and
-the selected task, never every task body.
+the selected task, never every task body. The index and the task files follow the mandatory
+`doc-pattern`: one routing row per task, every body in its own file, no content in the index.
 
 ## Conditional design input
 

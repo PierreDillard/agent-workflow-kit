@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "continuity",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Continuity workflow capabilities",
   "requires": {
     "tasks": "*",

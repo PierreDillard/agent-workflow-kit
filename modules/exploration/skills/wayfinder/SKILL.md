@@ -66,3 +66,6 @@ it, update its index row, then create or close only the tickets revealed by that
 
 Before ending an unfinished session, use `project-handoff`. When a resolution becomes implementable,
 create an ANTS task through `write-task`; do not implement it inside the decision ticket.
+
+The initiative index and its notes follow the mandatory `doc-pattern`: the index routes to tickets
+and notes, each of which holds its own content.

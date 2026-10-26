@@ -85,8 +85,11 @@ When it succeeds, continue the authorized scope. Preserve applicable lifecycle a
 ## 4 — Record the result and resume safely
 
 Apply installed task-validation contributions at validation and before-handoff contributions
-before replacing a handoff. Record checks actually run and their limits; a doctor pass proves
-installation integrity, not correct skill selection or native-agent behavior.
+before replacing a handoff. Every document written under `{{TASKS_DIR}}`, whatever the route,
+follows [doc-pattern](../doc-pattern/SKILL.md): an ultra-short index per theme routing to annexes,
+content in the annex only. The pattern is mandatory and independent of the installed modules.
+Record checks actually run and their limits; a doctor pass proves installation integrity, not
+correct skill selection or native-agent behavior.
 When Memory is installed, use `memory-report` only for verified reusable knowledge; reuse the
 bug skill's evidence transfer instead of recording it twice. When Continuity is installed,
 use `context-relay` at its trigger and `project-handoff` before ending unfinished work.

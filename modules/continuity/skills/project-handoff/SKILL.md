@@ -24,3 +24,6 @@ or not evidenced), and commit (SHA, or uncommitted/unknown). None implies either
 Link to the authoritative task at its existing path, branch memory and project memory rather
 than maintaining another task status or duplicating their content. Keep the
 handoff under 120 lines, mark uncertainty, and redact secrets or personal data.
+
+The handoff is an annex under `doc-pattern`: one theme, `## ` sections a reader can load alone,
+links to its task instead of copies of it.

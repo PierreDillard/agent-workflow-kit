@@ -9,4 +9,5 @@ stay in their owning documents.
 |---|---|---|
 
 Row format: flow name, a relative link to `doc/app/<flow>.md`, then the symbols, files and
-symptoms that should lead a reader to that flow.
+symptoms that should lead a reader to that flow. Shape, budgets and splitting rules come from
+the mandatory `doc-pattern` skill.

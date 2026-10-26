@@ -107,7 +107,7 @@ export function composeRules(modules, getContent, layout) {
 }
 
 export function composeComponents(modules) {
-  const components = new Map(['branch-router', 'project-workflow', 'workflow-doctor'].map(name => [name, 'project-template']));
+  const components = new Map(['branch-router', 'doc-pattern', 'project-workflow', 'workflow-doctor'].map(name => [name, 'project-template']));
   for (const module of modules) for (const component of module.components) {
     if (components.has(component.name)) throw new Error(`Duplicate skill: ${component.name}`);
     components.set(component.name, component.class);

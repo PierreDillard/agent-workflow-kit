@@ -108,3 +108,9 @@ Glossaries, in particular, are an essential reference. Once one is created, it s
 ## `NOTES.md`
 
 The user will sometimes express preferences of how they want to be taught, or things you should keep in mind. This is the place to record those preferences, so you can refer back to them when designing lessons or working with the user.
+
+## Document pattern
+
+Every file written in the teaching workspace follows the mandatory `doc-pattern`: `README.md` is an
+ultra-short index routing by theme to `learning-records/`, `reference/` and the format documents,
+and each of those files holds the content of a single theme in `## ` sections.

@@ -13,3 +13,4 @@ YYYY-MM-DD — [scope] decision — reason — evidence
 ```
 
 Append corrections as new decisions; never rewrite history. Keep this index below 32 KiB.
+The mandatory `doc-pattern` skill owns the shape of this index and of every decision theme.
