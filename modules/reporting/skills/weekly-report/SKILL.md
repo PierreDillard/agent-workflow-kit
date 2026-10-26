@@ -67,3 +67,6 @@ Il consulte la semaine courante et jusqu'à huit semaines de carnets précédent
 plus ancienne reste accessible explicitement. Le hook ne crée aucun fichier.
 Absence de plusieurs semaines : carnets des semaines déclarées seulement, aucun rapport généré.
 Une absence partielle reste une note. Le transfert manuel de `${TASKS_DIR}/` demeure le mode de reprise.
+
+The internal notebook follows the mandatory `doc-pattern` (index rows route to the week's notes);
+the shareable report is a deliverable for people outside the repository and is exempt.

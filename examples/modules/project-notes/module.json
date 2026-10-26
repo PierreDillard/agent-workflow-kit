@@ -1,12 +1,15 @@
 {
   "schemaVersion": 1,
   "id": "project-notes",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Keep a small project notebook without enabling weekly reporting",
-  "requires": { "memory": "^1.1.0" },
+  "requires": { "memory": "^1.2.0" },
   "config": { "title": "Project notes" },
   "skills": [{ "name": "project-notes", "source": "skills/project-notes" }],
   "files": [{ "source": "templates/notes.md", "target": "{{TASKS_DIR}}/notes/README.md", "editable": true }],
   "rules": [{ "id": "notes", "source": "rules/notes.md", "point": "task-validation", "when": ["tasks"] }],
-  "checks": [{ "path": "{{TASKS_DIR}}/notes/README.md", "type": "file" }]
+  "checks": [
+    { "path": "{{TASKS_DIR}}/notes/README.md", "type": "file", "maxBytes": 8192 },
+    { "path": "{{TASKS_DIR}}/notes/README.md", "type": "index", "level": "warn" }
+  ]
 }

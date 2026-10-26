@@ -4,3 +4,4 @@
 - Existing branch indexes remain valid. Find a resumed task from the user's path, an available
   handoff, branch index or narrowly searched branch metadata; never duplicate the effort.
 - Read only its index and selected task. Every meaningful change follows `ants` and `write-task`.
+- Task indexes and task files follow `doc-pattern`: the index routes, the task holds the content.

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "bugs",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Bugs workflow capabilities",
   "requires": {},
   "skills": [
@@ -44,7 +44,7 @@
     },
     {
       "path": "{{TASKS_DIR}}/bugs/README.md",
-      "type": "links",
+      "type": "index",
       "level": "warn"
     }
   ]

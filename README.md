@@ -136,6 +136,24 @@ Your assistant reads the matching index line, then only the matching section, in
 the whole codebase. It writes a flow doc once it has investigated the same flow twice. The indexes hold
 what the model cannot know about your project, never generic framework documentation.
 
+## One writing pattern, everywhere
+
+Whatever the module, every document your assistant writes in `tasks/` follows the same mandatory
+pattern: an **ultra-short index per theme**, whose rows point to **annex files** holding the
+content. A session then loads one index row, one annex and one section of it, instead of the whole
+folder — your context stays small as the project grows.
+
+```text
+tasks/PROJECT_MEMORY.md     index:  | Transport | memory/transport.md | reconnect, backpressure |
+tasks/memory/transport.md   annex:  the content itself, in sections a reader can load alone
+```
+
+The `doc-pattern` skill, installed with every profile, is the authority: it sets the shape, the
+8 KiB index and 16 KiB annex budgets, how to split an oversized file, and the few exemptions
+(code, commit messages, documents meant for people outside the repository). `npx ants-kit doctor`
+warns when an index grows past its budget, points at a missing annex, or carries content in a row
+instead of a link.
+
 For a custom first installation:
 
 ```bash

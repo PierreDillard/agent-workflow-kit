@@ -16,3 +16,6 @@ theme only when no existing row fits, then add it to the bug index.
 
 Never turn source reading into a confirmed root cause. Report `unconfirmed`, `reproduced`, or
 `confirmed by runtime` explicitly.
+
+The ledger index and its thematic traces follow the mandatory `doc-pattern`: the index row routes
+to the theme file, the evidence stays in that file.

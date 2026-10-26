@@ -25,14 +25,14 @@ of nine official modules and never automatically activates external discoveries.
 {
   "schemaVersion": 1,
   "id": "project-notes",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A small notebook",
-  "requires": { "memory": "^1.1.0" },
+  "requires": { "memory": "^1.2.0" },
   "config": { "title": "Project notes" },
   "skills": [{ "name": "project-notes", "source": "skills/project-notes" }],
   "files": [{ "source": "templates/notes.md", "target": "{{TASKS_DIR}}/notes/README.md", "editable": true }],
   "rules": [{ "id": "notes", "source": "rules/notes.md", "point": "task-validation", "when": ["tasks"] }],
-  "checks": [{ "path": "{{TASKS_DIR}}/notes/README.md", "type": "file" }]
+  "checks": [{ "path": "{{TASKS_DIR}}/notes/README.md", "type": "index", "level": "warn" }]
 }
 ```
 
@@ -48,7 +48,7 @@ writing any destination. One component/file has one owner; destination collision
 | `files` | `source` file/directory, `target`, optional boolean `editable` (default false) |
 | `rules` | Unique `id`, Markdown `source`, `point`, optional `when` array of module IDs |
 | `hooks` | Unique `id`, module-owned managed `path`, `runner` (`bash` or `node`), `args`, `point`, optional `when` |
-| `checks` | Owned `path` or `pattern` (`*` within one path segment), `type` (`file`, `json`, `timezone`, `links`), optional positive `maxBytes`, optional `level` (`fail` by default, or `warn`; a `pattern` or `links` check requires `warn`) |
+| `checks` | Owned `path` or `pattern` (`*` within one path segment), `type` (`file`, `json`, `timezone`, `links`, `index`), optional positive `maxBytes`, optional `level` (`fail` by default, or `warn`; a `pattern`, `links` or `index` check requires `warn`) |
 | `config` | String defaults; override on first activation with `--set module.key=value` |
 
 Collections other than identity fields may be omitted. A source path is relative to its module.
@@ -82,9 +82,21 @@ retain manifest order. Reporting's handoff fragment is a built-in example of con
 
 The doctor checks dependencies, managed hashes/modes, mirrored skills and declarative checks.
 `file` checks presence, `json` additionally parses JSON, `timezone` also validates its `timezone`
-field, and `links` requires every relative Markdown link to name an existing file. A `warn` check is
-reported by the doctor without failing it, and installation, add and update skip it. It checks no
-external services and makes no claim about the agent following instructions.
+field, `links` requires every relative Markdown link to name an existing file, and `index` adds to
+`links` the rule that every table row of an index carries a Markdown link, so a row routes instead
+of holding content. A `warn` check is reported by the doctor without failing it, and installation,
+add and update skip it. It checks no external services and makes no claim about the agent following
+instructions.
+
+## Document pattern
+
+Every document an agent writes under `{{TASKS_DIR}}` must follow one pattern: an ultra-short index
+per theme whose rows route to annex files, and annexes that each hold a single theme in `## `
+sections, so a session loads one row, one annex and one section instead of a whole family. The
+`doc-pattern` core skill is the authority (shape, 8 KiB index and 16 KiB annex budgets, splitting,
+exemptions); `{{KIT_DIR}}/base-rules.md` states the obligation, and a module gives it teeth by
+declaring `index` checks on the indexes it owns and `file` checks with `maxBytes` on its annexes.
+A module that stores documents elsewhere than `{{TASKS_DIR}}` applies the same pattern.
 
 ## Knowledge module
 

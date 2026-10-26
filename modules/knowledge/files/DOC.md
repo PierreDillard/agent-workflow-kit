@@ -13,3 +13,4 @@ theme, never this whole index plus every theme.
 |---|---|---|
 
 Row format: theme name, a relative link to `doc/<theme>.md`, then the questions it answers.
+Shape, budgets and splitting rules come from the mandatory `doc-pattern` skill.

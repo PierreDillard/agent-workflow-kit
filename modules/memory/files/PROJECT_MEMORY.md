@@ -13,4 +13,4 @@ needed by the current action. Raw evidence belongs in tasks or bug ledgers.
 - Cross-branch verified rules go in a thematic file under `memory/` and receive one row above.
 - Branch-only guidance goes in `memory/<branch-with-slashes-as-dashes>.md` and is not indexed here.
 - A task or bug remains the canonical evidence; memory links to it instead of copying it.
-- Keep this index below 8 KiB.
+- Keep this index below 8 KiB; `doc-pattern` owns the shape of this index and of every theme.
