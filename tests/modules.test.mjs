@@ -693,6 +693,18 @@ test('single kit directory: outside TASKS_DIR only agent discovery points are wr
   assert.match(read(setup, 'CLAUDE.md'), /\[planning notes\/tasks\/\.workflow\/PROJECT_RULES\.md\]\(<planning notes\/tasks\/\.workflow\/PROJECT_RULES\.md>\)/);
 });
 
+test('CLI: configuration accepts Windows line endings', context => {
+  const setup = fixture(context);
+  writeFileSync(setup.config, [
+    '# Windows configuration', '', 'PROJECT_NAME=Windows project', 'TASKS_DIR=planning notes/tasks',
+    'BRANCH_STRATEGY=flat', 'REQUIRE_PRECOMMIT=false', 'INSTALL_GLOBAL_SKILLS=false', '',
+  ].join('\r\n'));
+  command('node', [join(repository, 'bin/ants.mjs'), 'init', '--target', setup.project, '--yes',
+    '--config', setup.config, '--user-root', setup.user]);
+  assert.match(read(setup, 'AGENTS.md'), /^# Project context: Windows project\n/);
+  assert.ok(state(setup).modules.length > 0);
+});
+
 test('CLI: default target is the current Git root, --local excludes the kit directory, add takes module names', context => {
   const setup = fixture(context);
   const subdirectory = join(setup.project, 'src');
