@@ -88,7 +88,7 @@ function resolveTarget(target) {
 function loadConfiguration(path) {
   if (!existsSync(path)) throw new Error(`Config not found: ${path}`);
   const values = {};
-  for (const line of readFileSync(path, 'utf8').split('\n')) {
+  for (const line of readFileSync(path, 'utf8').split(/\r?\n/)) {
     if (!line || line.startsWith('#')) continue;
     const separator = line.indexOf('=');
     const key = separator < 0 ? line : line.slice(0, separator);
