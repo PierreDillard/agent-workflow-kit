@@ -113,6 +113,8 @@ for (const [profile, selection, modules] of [
   for (const client of ['.claude', '.codex']) {
     const skillPath = join(client, 'skills/project-workflow/SKILL.md');
     assert.equal(read(setup, skillPath), source);
+    assert.match(read(setup, skillPath), /Without Knowledge, explicitly report\s+"Knowledge is not installed"/);
+    assert.match(read(setup, skillPath), /Do not\s+create a task, memory entry, alternate index\/annex/);
     for (const reference of source.matchAll(/\]\(([^)]+\.md)\)/g)) {
       assert.equal(existsSync(resolve(setup.project, client, 'skills/project-workflow', reference[1])), true, reference[1]);
     }
@@ -202,6 +204,9 @@ test('knowledge: indexes installed editable, preserved on repeat add, themes and
   assert.match(read(setup, 'planning notes/tasks/DOC.md'), /grep -ril '<symbol>' planning notes\/tasks\/doc/);
   assert.match(read(setup, `${kit}/PROJECT_RULES.md`), /<!-- module:knowledge\/main -->\nFor code paths start at `\$\{TASKS_DIR\}\/APP.md`/);
   assert.doesNotMatch(read(setup, 'CLAUDE.md'), /APP\.md/);
+  const knowledgeRules = read(setup, `${kit}/PROJECT_RULES.md`);
+  assert.match(knowledgeRules, /Do not copy or paraphrase\s+existing sections into an ANTS annex/);
+  assert.match(knowledgeRules, /If CLAUDE\.md is absent or contains only the installer's unfilled scaffold/);
   assert.match(command('bash', [join(setup.project, kit, 'scripts/workflow-doctor.sh')]), /0 failure\(s\), 0 warning\(s\)/);
   mkdirSync(join(tasks, 'doc/app'), { recursive: true });
   writeFileSync(join(tasks, 'doc/app/login.md'), 'x'.repeat(16385));
