@@ -36,6 +36,7 @@ before reading optional skill paths; see Missing capabilities below.
 | **Audit / review** | Inspect only the requested surface. `consistency-check` for pattern audits, `novice-lens` for readability (Quality); `review-gate` for an explicitly requested independent review (Quality). | Read-only findings; no correction or implementation implied. |
 | **Planning** | `branch-router` → `grill-me` for decision exploration or `wayfinder` for a multi-session initiative (Exploration, only when applicable) → applicable design gates below → `ants` → `write-task` (Tasks). | Bounded task/plan with target branch when known, invariants and observable signals; no implementation implied. |
 | **Bug** | `branch-router` → `bug-triage` before diagnosis → `bug-fix-trace` for runtime confirmation and corrective work (Bugs). For authorized probes/fixes, reuse the implementation route and its gates before edits. | Reproduction status, bounded correction and regression evidence; thematic trace when Bugs is installed. A report alone does not authorize a fix. |
+| **Documentation initialisation** | `branch-router` → check Knowledge in the installed inventory → its initialisation rules and `doc-pattern` only when installed. | Complement existing project guidance without duplication; report absent Knowledge in the response and stop documentary writes. This request alone does not create a task or activate an implementation route. |
 | **Implementation** | `branch-router` → applicable design gates below → `ants`/`write-task` for meaningful changes (Tasks; reuse the existing contract) → `validate-task` when applicable (Quality) → implementation gates below → authorized edits → technical verification → `done-check` (Quality). | Verified change with actual evidence and limits in the existing task; no review, commit or merge inferred. |
 | **Merge** | `branch-router` → `review-gate` before a merge into DEFAULT_BRANCH or when independent review is requested (Quality) → explicitly authorized merge → `merge-integrity` immediately afterward (Quality). | Exact source/target/SHA and required review verdict before merge; integrity evidence afterward. Source changes invalidate review approval. |
 
@@ -73,6 +74,14 @@ is missing its required skill file, or local policy requires an unavailable chec
 and suspend only the dependent action; use `workflow-doctor` for suspected installation integrity.
 For example, a mandatory independent review unavailable before merge prevents that merge,
 while unrelated read-only analysis can continue. Never silently weaken the project contract.
+
+For an explicit request to initialise project documentation, check whether Knowledge is installed
+before choosing an implementation or task-writing route. Without Knowledge, explicitly report
+"Knowledge is not installed" and keep any bounded source observations in the response only. Do not
+create a task, memory entry, alternate index/annex, or rewrite CLAUDE.md/AGENTS.md as a substitute;
+do not install the module implicitly. Suspend documentary writes, not an independently requested
+and authorised code change. With Knowledge, follow its initialisation rules: existing project
+guidance is the starting point, and ANTS documentation complements it rather than copying it.
 
 ## Integration proof before expansion
 
