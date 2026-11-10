@@ -18,6 +18,11 @@ validator: Observable completion proof
 
 ## Why
 {For a feature, state the independently verifiable behavior that becomes usable.}
+## Result contract
+- Outcome: {what the user can see or do when complete}
+- Audience / context: {who and where, or not applicable}
+- User action / value: {what the user can accomplish, or not applicable}
+- Reference / quality bar: {concrete example or link, or `none supplied`; record any agreed proposal}
 ## Non-goals
 {Only when Quality is installed and `soak-readiness` applies, insert its `## Soak contract` block here.}
 ## ANTS steps
