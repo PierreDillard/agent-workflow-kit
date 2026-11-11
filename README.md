@@ -136,6 +136,11 @@ Your assistant reads the matching index line, then only the matching section, in
 the whole codebase. It writes a flow doc once it has investigated the same flow twice. The indexes hold
 what the model cannot know about your project, never generic framework documentation.
 
+On a mature project, ask your assistant to **initialise the project documentation**: it starts from
+your existing README, `CLAUDE.md` and `AGENTS.md`, links to what they already cover, and only adds
+what is missing — navigation, source-backed observations and discrepancies — one flow at a time.
+Your existing guidance files are never rewritten.
+
 ## One writing pattern, everywhere
 
 Whatever the module, every document your assistant writes in `tasks/` follows the same mandatory
@@ -224,7 +229,7 @@ bash agent-workflow-kit/module.sh update --target /path/to/my-project
 
 ## Project status
 
-**Version `0.4.0`, published on npm as [`ants-kit`](https://www.npmjs.com/package/ants-kit).**
+**Version `0.5.0`, published on npm as [`ants-kit`](https://www.npmjs.com/package/ants-kit).**
 
 Local tests, GitHub CI and publication archive checks pass; Linux is the tested platform. Checks in
 fresh Claude Code, Codex, and Copilot sessions are still to be recorded.
