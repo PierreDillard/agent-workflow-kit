@@ -66,6 +66,25 @@ function makeModule(setup, moduleId, overrides = {}) {
   return source;
 }
 
+test('architecture is opt-in and installs its skill for both clients with a healthy doctor', context => {
+  for (const profile of ['minimal', 'continuity', 'complete']) {
+    const setup = fixture(context);
+    install(setup, ['--profile', profile]);
+    assert.equal(state(setup).modules.some(module => module.id === 'architecture'), false);
+    for (const client of ['.claude', '.codex']) {
+      assert.equal(existsSync(join(setup.project, client, 'skills/architecture-fitness/SKILL.md')), false);
+    }
+  }
+  const setup = fixture(context);
+  install(setup, ['--modules', 'architecture']);
+  assert.deepEqual(state(setup).modules.map(module => module.id), ['architecture']);
+  const source = readFileSync(join(repository, 'modules/architecture/skills/architecture-fitness/SKILL.md'), 'utf8');
+  for (const client of ['.claude', '.codex']) {
+    assert.equal(read(setup, `${client}/skills/architecture-fitness/SKILL.md`), source);
+  }
+  assert.match(command('bash', [join(setup.project, kit, 'scripts/workflow-doctor.sh')]), /0 failure/);
+});
+
 test('minimal: selected capabilities only, project context preserved, dry run non-mutating and doctor healthy', context => {
   const setup = fixture(context);
   writeFileSync(join(setup.project, 'CLAUDE.md'), '# Local rules\n');
@@ -427,7 +446,7 @@ test('all official modules have a unique skill owner; all profiles and independe
     assert.equal(owners.has(skill.name), false, skill.name); owners.add(skill.name);
   }
   const expectedSkills = [
-    'ants', 'architect', 'bug-fix-trace', 'bug-triage', 'code-simplification',
+    'ants', 'architect', 'architecture-fitness', 'bug-fix-trace', 'bug-triage', 'code-simplification',
     'consistency-check', 'context-relay', 'done-check', 'explain-simply', 'explicit-naming',
     'failure-containment', 'grill-me', 'memory-report', 'merge-integrity', 'next-change',
     'novice-lens', 'perf-gate', 'project-handoff', 'replace-not-add', 'resource-ownership',

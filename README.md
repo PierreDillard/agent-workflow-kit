@@ -129,6 +129,7 @@ project's `.gitignore` is not touched. Hooks stay silent in clones that do not h
 | Exploration (`exploration`) | Help clarifying ideas before development |
 | Learning (`learning`) | Explanations and guidance to help you learn |
 | Knowledge (`knowledge`) | Indexes of your app's flows and domain facts, read one section at a time |
+| Architecture (`architecture`) | Assess architecture boundaries and maintain useful fitness checks; installed only when explicitly selected |
 
 **Knowledge** adds two indexes to `tasks/`: `APP.md` maps each code flow to its doc in `doc/app/`
 with the keywords that lead to it, and `DOC.md` maps each verified domain fact to its theme in `doc/`.

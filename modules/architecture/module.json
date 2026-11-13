@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "architecture",
+  "version": "1.0.0",
+  "description": "Architecture fitness guidance",
+  "requires": {},
+  "skills": [
+    {
+      "name": "architecture-fitness",
+      "source": "skills/architecture-fitness"
+    }
+  ],
+  "files": [],
+  "rules": [],
+  "hooks": [],
+  "checks": []
+}
