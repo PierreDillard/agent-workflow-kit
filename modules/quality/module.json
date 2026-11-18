@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "quality",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Quality workflow capabilities",
   "requires": {
     "tasks": "*"
@@ -91,6 +91,10 @@
     {
       "name": "soak-readiness",
       "source": "skills/soak-readiness"
+    },
+    {
+      "name": "workflow-retro",
+      "source": "skills/workflow-retro"
     }
   ],
   "files": [

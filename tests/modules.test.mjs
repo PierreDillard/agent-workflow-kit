@@ -85,6 +85,20 @@ test('architecture is opt-in and installs its skill for both clients with a heal
   assert.match(command('bash', [join(setup.project, kit, 'scripts/workflow-doctor.sh')]), /0 failure/);
 });
 
+test('workflow-retro ships only to project clients without a routing rule or hook', context => {
+  const setup = fixture(context, 'INSTALL_GLOBAL_SKILLS=true\n');
+  install(setup, ['--modules', 'quality']);
+  const skillPath = 'skills/workflow-retro/SKILL.md';
+  const source = readFileSync(join(repository, 'modules/quality', skillPath), 'utf8');
+  for (const client of ['.claude', '.codex']) {
+    assert.equal(read(setup, join(client, skillPath)), source);
+    assert.equal(existsSync(join(setup.user, client, skillPath)), false);
+    assert.doesNotMatch(read(setup, `${client}/skills/project-workflow/SKILL.md`), /workflow-retro/);
+  }
+  assert.deepEqual(state(setup).modules.find(module => module.id === 'quality').hooks, []);
+  assert.doesNotMatch(read(setup, `${kit}/PROJECT_RULES.md`), /workflow-retro/);
+});
+
 test('minimal: selected capabilities only, project context preserved, dry run non-mutating and doctor healthy', context => {
   const setup = fixture(context);
   writeFileSync(join(setup.project, 'CLAUDE.md'), '# Local rules\n');
@@ -451,7 +465,7 @@ test('all official modules have a unique skill owner; all profiles and independe
     'failure-containment', 'grill-me', 'memory-report', 'merge-integrity', 'next-change',
     'novice-lens', 'perf-gate', 'project-handoff', 'replace-not-add', 'resource-ownership',
     'reuse', 'review-gate', 'soak-readiness', 'tdd', 'teach', 'type-honesty', 'validate-task',
-    'wayfinder', 'weekly-report', 'write-task',
+    'wayfinder', 'weekly-report', 'workflow-retro', 'write-task',
   ];
   assert.deepEqual([...owners].sort(), expectedSkills.sort());
   for (const moduleId of ['memory', 'tasks', 'bugs', 'reporting', 'learning', 'exploration', 'knowledge']) {
