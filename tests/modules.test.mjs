@@ -66,6 +66,67 @@ function makeModule(setup, moduleId, overrides = {}) {
   return source;
 }
 
+test('Tasks blocks start and direct commits on main and master using the same installed check', context => {
+  const setup = fixture(context);
+  const git = (argumentsList, expectedSuccess = true) =>
+    command('git', ['-C', setup.project, ...argumentsList], expectedSuccess);
+  git(['symbolic-ref', 'HEAD', 'refs/heads/main']);
+  git(['config', 'user.name', 'Workflow Test']);
+  git(['config', 'user.email', 'workflow@example.invalid']);
+  git(['config', 'core.hooksPath', join(setup.root, 'disabled-hooks')]);
+  git(['commit', '--allow-empty', '-qm', 'Initial commit']);
+  git(['branch', 'master', 'HEAD']);
+  git(['tag', 'main']);
+  git(['tag', 'master']);
+
+  install(setup, ['--modules', 'tasks']);
+  const hooksDirectory = `${kit}/scripts/git-hooks`;
+  const hookPath = `./${hooksDirectory}/pre-commit`;
+  for (const client of ['.claude', '.codex']) {
+    const skill = read(setup, `${client}/skills/ants/SKILL.md`);
+    assert.ok(skill.includes(hookPath));
+    assert.match(skill, /before creating or editing the task/);
+  }
+  const taskStart = (...argumentsList) =>
+    spawnSync('sh', [hookPath, 'task-start', ...argumentsList], { cwd: setup.project, encoding: 'utf8' });
+
+  const taskDirectory = join(setup.project, tasksDirectory, 'todo', 'prospection');
+  mkdirSync(taskDirectory, { recursive: true });
+  writeFileSync(join(taskDirectory, '03-prospection-locale.md'), 'status: pending\n');
+  writeFileSync(join(taskDirectory, 'README.md'), '03-prospection-locale | pending\n');
+  writeFileSync(join(setup.project, 'implementation.txt'), 'original content\n');
+  git(['config', 'core.hooksPath', hooksDirectory]);
+  const initialHead = git(['rev-parse', 'HEAD']);
+  for (const protectedBranch of ['main', 'master']) {
+    git(['switch', protectedBranch]);
+    const before = snapshot(setup.project);
+    const blockedStart = taskStart('prospection-locale');
+    assert.equal(blockedStart.status, 1);
+    assert.match(blockedStart.stderr, new RegExp(`blocked on ${protectedBranch}.*codex/prospection-locale`));
+    const blockedResume = taskStart('prospection-locale', 'dev/');
+    assert.equal(blockedResume.status, 1);
+    assert.match(blockedResume.stderr, new RegExp(`blocked on ${protectedBranch}.*dev/prospection-locale`));
+    const invalidSuggestion = taskStart(protectedBranch, '');
+    assert.equal(invalidSuggestion.status, 2);
+    assert.ok(invalidSuggestion.stderr.includes(`Invalid dedicated branch: ${protectedBranch}`));
+    assert.deepEqual(snapshot(setup.project), before);
+
+    const blockedCommit = git(['commit', '--allow-empty', '-m', 'Blocked'], false);
+    assert.ok(blockedCommit.includes(`Commit blocked on ${protectedBranch}.`));
+    assert.equal(git(['rev-parse', 'HEAD']), initialHead);
+  }
+
+  git(['switch', '--detach', 'HEAD']);
+  const detachedStart = taskStart('prospection-locale');
+  assert.equal(detachedStart.status, 1);
+  assert.match(detachedStart.stderr, /Cannot determine the current Git branch/);
+
+  git(['switch', '-c', 'codex/prospection-locale']);
+  assert.equal(taskStart('prospection-locale').status, 0);
+  git(['commit', '--allow-empty', '-qm', 'Allowed']);
+  assert.notEqual(git(['rev-parse', 'HEAD']), initialHead);
+});
+
 test('architecture is opt-in and installs its skill for both clients with a healthy doctor', context => {
   for (const profile of ['minimal', 'continuity', 'complete']) {
     const setup = fixture(context);
