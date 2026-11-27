@@ -24,8 +24,8 @@ function fixture(context) {
   }
   function ants(...args) { return run(process.execPath, [cli, ...args]); }
   function write(path, content) { writeFileSync(join(root, path), content); }
-  function install() {
-    const result = ants('init', '--yes', '--config', 'project.env', '--modules', 'quality');
+  function install(...options) {
+    const result = ants('init', '--yes', '--config', 'project.env', '--modules', 'quality', ...options);
     assert.equal(result.status, 0, result.stderr);
   }
   git('init', '-q', '-b', 'main');
@@ -83,11 +83,11 @@ test('verify fails closed without checks and spends a single bounded command bud
   assert.equal(JSON.parse(success.stdout).passed, true);
 });
 
-function refinement(context) {
+function refinement(context, { local = false } = {}) {
   const setup = fixture(context);
   const { root, git, write, install } = setup;
   write('project.env', 'INSTALL_GLOBAL_SKILLS=false\n');
-  install();
+  install(...(local ? ['--local'] : []));
   git('switch', '-qc', 'integration');
   const record = 'tasks/refinements/fixture.json';
   mkdirSync(dirname(join(root, record)), { recursive: true });
@@ -95,6 +95,11 @@ function refinement(context) {
   function save() { write(record, JSON.stringify(evidence, null, 2) + '\n'); }
   save();
   git('add', '.');
+  if (local) {
+    git('check-ignore', '--', record);
+    git('add', '-f', '--', record);
+    assert.equal(git('ls-files', '--', 'tasks'), record);
+  }
   git('commit', '-qm', 'Register the experiment');
   const baseline = git('rev-parse', 'HEAD');
   git('switch', '-qc', 'candidate');
@@ -123,8 +128,8 @@ function refinement(context) {
   return { ...setup, record, instruction, baseline, candidate, evidence, commitEvidence };
 }
 
-test('refine binds approval to the reviewed tip, promotes both commits and preserves evidence on revert', context => {
-  const { root, git, ants, record, baseline, candidate, instruction, commitEvidence, write } = refinement(context);
+test('refine with local tasks binds approval to the reviewed tip and preserves the tracked record on revert', context => {
+  const { root, git, ants, record, baseline, candidate, instruction, commitEvidence, write } = refinement(context, { local: true });
   const tip = commitEvidence();
   git('switch', '-q', 'integration');
   const args = ['--record', record, '--tip', tip];

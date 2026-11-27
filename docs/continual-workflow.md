@@ -43,6 +43,16 @@ durations. Redirect stdout to a file if you want to link it as evidence.
 
 ## Compare a rule change
 
+Use a Git-tracked record for the protocol, comparison results and evidence references.
+With `--local`, Git ignores the tasks directory. To start tracking the record in that installation,
+add only the chosen file before the baseline commit, substituting your tasks directory and record name:
+
+```sh
+git add -f -- "<TASKS_DIR>/refinements/<name>.json"
+```
+
+Git tracks subsequent edits to that file normally. The rest of the tasks directory stays local.
+
 1. Install `quality` in the project. Request `workflow-retro` for a named task or incident.
    Proceed to a comparison when its verdict is `CANDIDATE`.
 2. On a named integration branch, copy the [record template](../examples/refinement.json)
