@@ -9,11 +9,14 @@ description: Préparer les objectifs et le bilan hebdomadaire personnel, consign
 
 Lire `{{KIT_DIR}}/kit.env` pour résoudre `TASKS_DIR` (chemin relatif, pas forcément `tasks`).
 
-- Lire `${TASKS_DIR}/reports/config.json`, puis le carnet de la semaine demandée seulement.
-- Sans semaine explicite, utiliser la semaine ISO du fuseau configuré :
-  `bash "{{KIT_DIR}}/scripts/weekly-report-status.sh"` depuis la racine du projet.
-- Avant écriture, lire [documents.md](references/documents.md) pour les formats et états.
-- Pour collecter ou rédiger, lire [collection.md](references/collection.md).
+- Lire `${TASKS_DIR}/reports/config.json` et le carnet de la semaine demandée. Sans semaine
+  explicite, calculer la semaine ISO dans le fuseau configuré ; le rappel n'est pas nécessaire.
+- Lire dans [documents.md](references/documents.md) uniquement la section « Carnet » pour
+  les notes et leur état, ou « Rapport » pour le rapport ; lire l'introduction si création.
+- Pour collecter ou rédiger, lire les sections utiles de [collection.md](references/collection.md).
+- `note`, `valider`, `refuser`, `plus tard` : modifier seulement le carnet ciblé, sans
+  reconstruire la semaine ni lire un ancien rapport comme modèle. Pour `plus tard`, le bloc
+  JSON en tête et la définition de `snoozed_until` suffisent.
 - Le carnet possède les événements ; les tâches possèdent état courant et preuves.
   Le rapport est une synthèse transmissible, jamais une source de statut des tâches.
 - Les chemins des sources sont relatifs à la racine projet ; leurs variables d'environnement
@@ -54,10 +57,18 @@ Lire `{{KIT_DIR}}/kit.env` pour résoudre `TASKS_DIR` (chemin relatif, pas forc�
   concurrentes. Si conflit factuel, demander ; ne pas écraser une copie divergente.
 - Rapport finalisé : proposer les compléments, y compris le week-end, dans la semaine réelle.
   Ne pas le réécrire silencieusement ni déplacer une activité vers une autre semaine.
-- Lire semaine cible + précédente et références nécessaires, pas tous les historiques.
+- Pour un bilan, lire la semaine cible et la précédente : répondre à chacun des objectifs
+  précédents. Pour les autres modes, ne lire une autre semaine que si nécessaire.
   Pas de scan de conversations, fetch/push/envoi/publication ou surveillance automatique.
 - Rattrapage facultatif sans bloquer la semaine courante. Une journée sans trace n'est pas une
   journée sans travail. Viser 5–10 minutes de relecture utilisateur.
+
+## Réponses
+
+Réponse courante : 1–3 lignes avec action, identifiants ou date et lien cible ; ne pas recopier
+le document ni les sorties d'outils. Pour une validation humaine, présenter seulement les
+propositions nouvelles et la question. Garder les limites importantes visibles et les preuves
+détaillées dans les documents. Avant rédaction définitive d'une journée, demander les compléments.
 
 ## Rappels
 

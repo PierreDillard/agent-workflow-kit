@@ -7,7 +7,8 @@
 3. Lire les commits locaux de chaque dépôt, SHA complets, auteur/email, dates auteur/committer,
    sujet. Exemple read-only : `git -C <source> log --all --since-as-filter=<lundi> --until=<lundi-suivant> --format=...`.
    Bornes explicites dans le fuseau configuré, changement d'heure compris ; filtrer l'intervalle semi-ouvert
-   [lundi, lundi suivant[. Une date de commit ne date pas toute la réalisation.
+   [lundi, lundi suivant[. Vérifier le contenu des commits retenus avant de le décrire ;
+   le sujet seul ne suffit pas. Une date de commit ne date pas toute la réalisation.
 4. Filtrer par les `author_emails` exacts. Si vides, lire les identités Git locales et faire
    confirmer une seule fois avant sauvegarde en config. Coauteurs, merges et auteur ambigu :
    clarifier au besoin. Dédupliquer dépôt+SHA, et cherry-picks par provenance/diff si nécessaire.
