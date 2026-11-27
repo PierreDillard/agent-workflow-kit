@@ -16,8 +16,9 @@ files or evidence are missing, state the gap instead of claiming synchronization
 Before replacing the previous handoff, apply the active before-handoff contributions in
 `{{KIT_DIR}}/PROJECT_RULES.md`. With none installed, continue directly.
 
-Include date, branch and status, followed by: next focus, verified current state, implementation
-decisions, Git state, relevant files, risks, immediate atomic actions and suggested skills.
+Include date, branch and the Git state needed to resume. When the active task has a resume
+section, link directly to it and record only branch context that the task does not contain.
+When there is no active task, put the last verified signal, open limits and next action here.
 
 Distinguish implementation (task status + validation), independent review (verdict + exact SHA,
 or not evidenced), and commit (SHA, or uncommitted/unknown). None implies either of the others.
