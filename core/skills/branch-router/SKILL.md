@@ -20,11 +20,20 @@ its memory and handoff; task paths may belong to an effort and remain valid acro
 
 Read the index first. Load individual tasks or memory themes only when the current action needs them.
 
-## Routing
+## Routing and preflight
 
 - `trunk`: work on `DEFAULT_BRANCH` only when the user authorizes it.
 - `flat`: feature branches derive from and merge directly into `DEFAULT_BRANCH`; propose
   `FEATURE_BRANCH_PREFIX<slug>` when the current branch does not match the change.
+  Before starting or resuming development, run the installed preflight from the Git root
+  with the selected effort slug, before writing the task, index, status or implementation:
+
+  ```sh
+  sh "./{{KIT_DIR}}/scripts/git-hooks/pre-commit" task-start "<effort-slug>"
+  ```
+
+  Report a nonzero exit and stop before writing. Rerun after reaching the intended branch.
+  Check the branch against the task intent even when the command succeeds.
 - `custom`: read `{{KIT_DIR}}/branch-policy.md`; it is the only branch-policy authority.
 
 Classify by change intent, not merely by the file touched. Mixed intents become separate atomic

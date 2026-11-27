@@ -66,65 +66,91 @@ function makeModule(setup, moduleId, overrides = {}) {
   return source;
 }
 
-test('Tasks blocks start and direct commits on main and master using the same installed check', context => {
-  const setup = fixture(context);
+test('core branch preflight and Git hook use the configured flat branch policy', context => {
+  const setup = fixture(context, 'DEFAULT_BRANCH=integration\nFEATURE_BRANCH_PREFIX=work/\n');
   const git = (argumentsList, expectedSuccess = true) =>
     command('git', ['-C', setup.project, ...argumentsList], expectedSuccess);
-  git(['symbolic-ref', 'HEAD', 'refs/heads/main']);
+  git(['symbolic-ref', 'HEAD', 'refs/heads/integration']);
   git(['config', 'user.name', 'Workflow Test']);
   git(['config', 'user.email', 'workflow@example.invalid']);
   git(['config', 'core.hooksPath', join(setup.root, 'disabled-hooks')]);
   git(['commit', '--allow-empty', '-qm', 'Initial commit']);
+  git(['branch', 'main', 'HEAD']);
   git(['branch', 'master', 'HEAD']);
-  git(['tag', 'main']);
-  git(['tag', 'master']);
+  git(['tag', 'integration']);
 
-  install(setup, ['--modules', 'tasks']);
+  install(setup, ['--modules', 'reporting']);
+  assert.ok(state(setup).modules.every(module => module.id !== 'tasks'));
   const hooksDirectory = `${kit}/scripts/git-hooks`;
   const hookPath = `./${hooksDirectory}/pre-commit`;
   for (const client of ['.claude', '.codex']) {
-    const skill = read(setup, `${client}/skills/ants/SKILL.md`);
-    assert.ok(skill.includes(hookPath));
-    assert.match(skill, /before creating or editing the task/);
+    const router = read(setup, `${client}/skills/branch-router/SKILL.md`);
+    assert.ok(router.includes(hookPath));
+    assert.match(read(setup, `${client}/skills/project-workflow/SKILL.md`), /preflight before creating or updating the task/);
+    const configurationPath = client === '.claude' ? '.claude/settings.json' : '.codex/hooks.json';
+    const startup = JSON.parse(read(setup, configurationPath)).hooks.SessionStart[0].hooks[0];
+    const result = spawnSync('bash', ['-c', startup.command], {
+      cwd: setup.project, encoding: 'utf8', env: { ...process.env, CLAUDE_PROJECT_DIR: setup.project },
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Workflow context for branch integration/);
+    assert.match(result.stdout, /Before development writes, use branch-router/);
   }
-  const taskStart = (...argumentsList) =>
-    spawnSync('sh', [hookPath, 'task-start', ...argumentsList], { cwd: setup.project, encoding: 'utf8' });
+  const taskStart = slug =>
+    spawnSync('sh', [hookPath, 'task-start', slug], { cwd: setup.project, encoding: 'utf8' });
 
-  const taskDirectory = join(setup.project, tasksDirectory, 'todo', 'prospection');
-  mkdirSync(taskDirectory, { recursive: true });
-  writeFileSync(join(taskDirectory, '03-prospection-locale.md'), 'status: pending\n');
-  writeFileSync(join(taskDirectory, 'README.md'), '03-prospection-locale | pending\n');
-  writeFileSync(join(setup.project, 'implementation.txt'), 'original content\n');
   git(['config', 'core.hooksPath', hooksDirectory]);
   const initialHead = git(['rev-parse', 'HEAD']);
-  for (const protectedBranch of ['main', 'master']) {
-    git(['switch', protectedBranch]);
-    const before = snapshot(setup.project);
-    const blockedStart = taskStart('prospection-locale');
-    assert.equal(blockedStart.status, 1);
-    assert.match(blockedStart.stderr, new RegExp(`blocked on ${protectedBranch}.*codex/prospection-locale`));
-    const blockedResume = taskStart('prospection-locale', 'dev/');
-    assert.equal(blockedResume.status, 1);
-    assert.match(blockedResume.stderr, new RegExp(`blocked on ${protectedBranch}.*dev/prospection-locale`));
-    const invalidSuggestion = taskStart(protectedBranch, '');
-    assert.equal(invalidSuggestion.status, 2);
-    assert.ok(invalidSuggestion.stderr.includes(`Invalid dedicated branch: ${protectedBranch}`));
-    assert.deepEqual(snapshot(setup.project), before);
+  const before = snapshot(setup.project);
+  assert.match(taskStart('prospection').stderr, /blocked on integration.*work\/prospection/);
+  assert.equal(taskStart('prospection').status, 1);
+  assert.equal(taskStart('invalid slug').status, 2);
+  assert.deepEqual(snapshot(setup.project), before);
+  assert.match(git(['commit', '--allow-empty', '-m', 'Blocked'], false), /Direct commit blocked on integration/);
+  assert.equal(git(['rev-parse', 'HEAD']), initialHead);
 
-    const blockedCommit = git(['commit', '--allow-empty', '-m', 'Blocked'], false);
-    assert.ok(blockedCommit.includes(`Commit blocked on ${protectedBranch}.`));
-    assert.equal(git(['rev-parse', 'HEAD']), initialHead);
+  for (const allowedBranch of ['main', 'master']) {
+    git(['switch', allowedBranch]);
+    assert.equal(taskStart('prospection').status, 0);
+    git(['commit', '--allow-empty', '-qm', 'Allowed']);
   }
 
   git(['switch', '--detach', 'HEAD']);
-  const detachedStart = taskStart('prospection-locale');
+  const detachedStart = taskStart('prospection');
   assert.equal(detachedStart.status, 1);
   assert.match(detachedStart.stderr, /Cannot determine the current Git branch/);
 
-  git(['switch', '-c', 'codex/prospection-locale']);
-  assert.equal(taskStart('prospection-locale').status, 0);
-  git(['commit', '--allow-empty', '-qm', 'Allowed']);
-  assert.notEqual(git(['rev-parse', 'HEAD']), initialHead);
+  git(['switch', '-c', 'work/prospection']);
+  assert.equal(taskStart('prospection').status, 0);
+  writeFileSync(join(setup.project, 'implementation.txt'), 'feature content\n');
+  git(['add', 'implementation.txt']);
+  git(['commit', '-qm', 'Feature change']);
+  git(['switch', 'integration']);
+  git(['merge', '--no-ff', '--no-commit', 'work/prospection']);
+  git(['commit', '-qm', 'Complete authorized merge']);
+  assert.equal(read(setup, 'implementation.txt'), 'feature content\n');
+});
+
+test('branch preflight and Git hook leave trunk and custom policy to the project', context => {
+  for (const strategy of ['trunk', 'custom']) {
+    const setup = fixture(context, `DEFAULT_BRANCH=main\nBRANCH_STRATEGY=${strategy}\n`);
+    if (strategy === 'custom') {
+      const branchPolicyPath = join(setup.root, 'branch-policy.md');
+      writeFileSync(branchPolicyPath, 'The project owns its custom policy.\n');
+      writeFileSync(setup.config, `BRANCH_POLICY_FILE=${branchPolicyPath}\n`, { flag: 'a' });
+    }
+    const git = argumentsList => command('git', ['-C', setup.project, ...argumentsList]);
+    git(['symbolic-ref', 'HEAD', 'refs/heads/main']);
+    git(['config', 'user.name', 'Workflow Test']);
+    git(['config', 'user.email', 'workflow@example.invalid']);
+    install(setup, ['--modules', 'tasks']);
+    const hooksDirectory = `${kit}/scripts/git-hooks`;
+    const preflight = spawnSync('sh', [`./${hooksDirectory}/pre-commit`, 'task-start', 'prospection'],
+      { cwd: setup.project, encoding: 'utf8' });
+    assert.equal(preflight.status, 0, preflight.stderr);
+    git(['config', 'core.hooksPath', hooksDirectory]);
+    git(['commit', '--allow-empty', '-qm', 'Local policy allows the commit']);
+  }
 });
 
 test('architecture is opt-in and installs its skill for both clients with a healthy doctor', context => {

@@ -21,8 +21,10 @@ Resume at the existing task location. Questions and audits do not require creati
 Classify the intent using the table below. Sequence mixed requests (e.g. implement then merge)
 as separate routes; completing one does not authorize the next. For non-trivial changes,
 briefly state the route, applicable skills in order, owner/invariants and verification signal.
-Use [branch-router](../branch-router/SKILL.md) for branch decisions; do not infer permission
-from the route. If HEAD does not exist, report it; never invent a source SHA or target branch.
+Use [branch-router](../branch-router/SKILL.md) before any versioned change. For
+development start or resume, complete its preflight before creating or updating the task,
+changing its status or editing implementation files. This also applies without Tasks.
+Do not infer permission from the route. If HEAD does not exist, report it; never invent a source SHA or target branch.
 
 ## 2 — Choose the route
 

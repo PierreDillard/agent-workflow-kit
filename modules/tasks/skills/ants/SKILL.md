@@ -9,19 +9,8 @@ Every implementation change must be easy to understand, verify, review and rever
 
 ## Before changing code
 
-For every development task start or resume under the flat branch strategy, run the
-shared branch check from the project root before creating or editing the task, changing
-its status, updating the index, or touching implementation files:
-
-```sh
-sh "./{{KIT_DIR}}/scripts/git-hooks/pre-commit" task-start <task-slug> <feature-branch-prefix>
-```
-
-Substitute the effort slug and the prefix configured in the project's kit.env. Omit the
-prefix argument if no prefix is configured. The check blocks `main` and `master`. On a
-nonzero exit, stop before writing and report the diagnostic. Continue only from an allowed
-branch after rerunning the check.
-Read-only planning and trunk/custom routing follow the project's branch policy.
+For development task start or resume, complete the [branch-router](../branch-router/SKILL.md)
+preflight before writing.
 
 Start with the applicable project rules, the active task (or its resume section), and the
 code owning the first observable signal. Load other sections when a decision or required

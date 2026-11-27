@@ -19,18 +19,24 @@ installed modules and available catalogs and printed in the plan. No network dow
 Use `--profile minimal|continuity|complete` during initial installation; Complete has a fixed list
 of nine official modules and never automatically activates external discoveries.
 
-## Task branch protection
+## Development branch protection
 
-In projects using the Tasks module and the flat branch strategy, ANTS checks the current
-branch before starting or resuming development. It stops on `main` or `master` before
-updating the task or editing files and suggests a dedicated branch. The check only reads Git state.
+With the flat strategy, `branch-router` runs a read-only preflight from the project root
+before starting or resuming development. It blocks work on `DEFAULT_BRANCH` and suggests
+a branch using `FEATURE_BRANCH_PREFIX`. Trunk and custom strategies follow local policy.
 
-Tasks also installs the same check as an executable Git hook at
-`<TASKS_DIR>/.workflow/scripts/git-hooks/pre-commit`. When the project has no existing
-Git hooks to preserve, activate it from the project root with
-`git config --local core.hooksPath '<TASKS_DIR>/.workflow/scripts/git-hooks'`, substituting
-the actual task directory. If the project already uses a pre-commit hook, call the
-installed script without arguments from that hook and propagate its exit status.
+The core includes the same check as a Git hook at
+`<TASKS_DIR>/.workflow/scripts/git-hooks/pre-commit`. To configure it as the Git hook in a
+project without existing hooks, run this from the project root with the actual tasks directory:
+
+```sh
+git config --local core.hooksPath '<TASKS_DIR>/.workflow/scripts/git-hooks'
+```
+
+If the project uses existing Git hooks, call the installed script without arguments from
+its pre-commit hook and propagate the exit status. The Git hook blocks direct commits on
+the flat default branch. A merge already in progress can still be completed, and the
+review and merge checks continue to apply.
 
 ## Manifest version 1
 
