@@ -25,6 +25,10 @@ With the flat strategy, `branch-router` runs a read-only preflight from the proj
 before starting or resuming development. It blocks work on `DEFAULT_BRANCH` and suggests
 a branch using `FEATURE_BRANCH_PREFIX`. Trunk and custom strategies follow local policy.
 
+At installation, an explicit `DEFAULT_BRANCH` takes precedence. Otherwise, the installer uses
+the locally known `origin/HEAD`, or the remote HEAD when the project has a single remote with
+another name. If neither is available, it uses the current branch, or `main` on a detached HEAD.
+
 The core includes the same check as a Git hook at
 `<TASKS_DIR>/.workflow/scripts/git-hooks/pre-commit`. To configure it as the Git hook in a
 project without existing hooks, run this from the project root with the actual tasks directory:

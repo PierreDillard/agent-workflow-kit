@@ -818,6 +818,37 @@ test('single kit directory: outside TASKS_DIR only agent discovery points are wr
   assert.match(read(setup, 'CLAUDE.md'), /\[planning notes\/tasks\/\.workflow\/PROJECT_RULES\.md\]\(<planning notes\/tasks\/\.workflow\/PROJECT_RULES\.md>\)/);
 });
 
+test('CLI: init from a feature branch protects the remote default and honors explicit configuration', context => {
+  for (const { remote, defaultBranch, configuredBranch } of [
+    { remote: 'origin', defaultBranch: 'main' },
+    { remote: 'upstream', defaultBranch: 'release/stable' },
+    { remote: 'origin', defaultBranch: 'main', configuredBranch: 'integration' },
+  ]) {
+    const setup = fixture(context, configuredBranch ? `DEFAULT_BRANCH=${configuredBranch}\n` : '');
+    const git = (argumentsList, expectedSuccess = true) =>
+      command('git', ['-C', setup.project, ...argumentsList], expectedSuccess);
+    git(['symbolic-ref', 'HEAD', `refs/heads/${defaultBranch}`]);
+    git(['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', '-c', 'commit.gpgsign=false',
+      'commit', '--allow-empty', '-qm', 'Initial commit']);
+    git(['remote', 'add', remote, setup.root]);
+    git(['update-ref', `refs/remotes/${remote}/${defaultBranch}`, 'HEAD']);
+    git(['symbolic-ref', `refs/remotes/${remote}/HEAD`, `refs/remotes/${remote}/${defaultBranch}`]);
+    git(['switch', '-qc', 'dev/feature']);
+    install(setup);
+    const protectedBranch = configuredBranch ?? defaultBranch;
+    assert.equal(state(setup).configuration.defaultBranch, protectedBranch);
+
+    git(['config', 'user.name', 'Fixture']);
+    git(['config', 'user.email', 'fixture@example.invalid']);
+    git(['config', 'commit.gpgsign', 'false']);
+    git(['config', 'core.hooksPath', `${kit}/scripts/git-hooks`]);
+    git(['commit', '--allow-empty', '-qm', 'Feature commit']);
+    git(['switch', '-q', ...(configuredBranch ? ['-c'] : []), protectedBranch]);
+    const rejectedCommit = git(['commit', '--allow-empty', '-m', 'Direct commit'], false);
+    assert.ok(rejectedCommit.includes(`Direct commit blocked on ${protectedBranch}.`), rejectedCommit);
+  }
+});
+
 test('CLI: configuration accepts Windows line endings', context => {
   const setup = fixture(context);
   writeFileSync(setup.config, [

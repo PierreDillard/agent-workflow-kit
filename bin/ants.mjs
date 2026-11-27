@@ -58,6 +58,15 @@ function git(args) {
   return result.status === 0 ? result.stdout.trim() : null;
 }
 
+function detectDefaultBranch(projectRoot) {
+  const remoteNames = (git(['-C', projectRoot, 'remote']) ?? '').split('\n').filter(Boolean);
+  const remote = remoteNames.length === 1 ? remoteNames[0] : 'origin';
+  const remotePrefix = `refs/remotes/${remote}/`;
+  const remoteHead = git(['-C', projectRoot, 'symbolic-ref', '--quiet', `${remotePrefix}HEAD`]);
+  if (remoteHead?.startsWith(remotePrefix)) return remoteHead.slice(remotePrefix.length);
+  return git(['-C', projectRoot, 'symbolic-ref', '--short', 'HEAD']) ?? 'main';
+}
+
 function parseArguments(argumentsList) {
   const options = { catalogs: [join(kitRoot, 'modules')], sources: [], settings: {}, positional: [], dryRun: false, yes: false };
   const valueFlags = { '--target': 'target', '--config': 'config', '--tasks-dir': 'tasksDirectory', '--user-root': 'userRoot',
@@ -140,11 +149,12 @@ function checkBoolean(values, key) {
 async function install(options) {
   const projectRoot = resolveTarget(options.target);
   if (locateInstallation(projectRoot)) throw new Error('Workflow kit already installed; use add or update');
-  const detectedBranch = git(['-C', projectRoot, 'symbolic-ref', '--short', 'HEAD']) ?? 'main';
-  const values = { PROJECT_NAME: basename(projectRoot), DEFAULT_BRANCH: detectedBranch, BRANCH_STRATEGY: 'flat',
+  const configuration = options.config ? loadConfiguration(options.config) : {};
+  const values = { PROJECT_NAME: basename(projectRoot),
+    DEFAULT_BRANCH: configuration.DEFAULT_BRANCH ?? detectDefaultBranch(projectRoot), BRANCH_STRATEGY: 'flat',
     FEATURE_BRANCH_PREFIX: 'dev/', BRANCH_POLICY_FILE: '', TASKS_DIR: 'tasks', DEV_COMMAND: '',
     ...Object.fromEntries(Object.keys(verificationCommands).map(key => [key, ''])), REQUIRE_PRECOMMIT: 'false', INSTALL_GLOBAL_SKILLS: 'true',
-    REPORT_TIMEZONE: 'Europe/Paris', TRACK_TASKS_DIR: 'true', ...(options.config ? loadConfiguration(options.config) : {}) };
+    REPORT_TIMEZONE: 'Europe/Paris', TRACK_TASKS_DIR: 'true', ...configuration };
   if (options.tasksDirectory) values.TASKS_DIR = options.tasksDirectory;
   if (options.local) values.TRACK_TASKS_DIR = 'false';
   if (!values.PROJECT_NAME) values.PROJECT_NAME = basename(projectRoot);
