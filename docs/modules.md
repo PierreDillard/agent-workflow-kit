@@ -206,3 +206,7 @@ Repeating an unchanged update preserves all bytes. Caught write errors roll back
 power loss/process kill is not covered. Inspect a leftover `.workflow-install.lock` and the target
 inventory/files before retrying after such an interruption. No Git operation, hook, application task
 or external publication is performed by update.
+
+## Continual workflow
+
+See the [continual workflow guide](continual-workflow.md) to compare a rule change, promote it with human approval, and run deterministic project checks.
