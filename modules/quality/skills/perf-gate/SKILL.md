@@ -1,9 +1,19 @@
 ---
 name: perf-gate
-description: Require a bounded ceiling, written prediction, fixed protocol and measured comparison before claiming a performance improvement. Use when a task claims a performance gain, when a change is justified by "it feels faster", when reading a profiler capture, or before optimizing anything.
+description: Require a bounded ceiling, written prediction, fixed protocol and measured comparison before claiming a performance improvement. Use when a task claims a performance gain, when a change is justified by "it feels faster", when reading a profiler capture, before optimizing, or when a functional change could increase runtime or resource cost.
 ---
 
 # Performance Gate
+
+## Preserve performance in a functional change
+
+Before editing, identify the cost controls on the affected path and choose a small check
+of work per item, frequency, subscriptions or retained data. Reuse the task's verification.
+Compare the same workload before and after if deterministic evidence leaves the cost
+uncertain. Record the result or the remaining uncertainty. Functional test success alone
+does not demonstrate preserved performance.
+
+## Verify a performance improvement
 
 Use for any performance claim. An unmeasured optimization is a belief; a measurement without a
 prior prediction is an unexplained result.
