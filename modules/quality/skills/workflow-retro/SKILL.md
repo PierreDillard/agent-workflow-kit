@@ -49,3 +49,6 @@ Return a short section suitable for the existing task, not a second incident rep
   pending human review. Keep failures; repeat noisy comparisons or report them inconclusive.
   Promotion requires independent benefit, no blocking regression, acceptable cost and explicit
   approval. Identify the change to revert and when contrary evidence should reopen the decision.
+A user may separately authorize a comparison and promotion. The ants refine commands
+consume a registered protocol and evidence from that work. The retrospective still ends
+with its verdict and candidate record in the response.

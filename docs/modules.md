@@ -19,6 +19,29 @@ installed modules and available catalogs and printed in the plan. No network dow
 Use `--profile minimal|continuity|complete` during initial installation; Complete has a fixed list
 of nine official modules and never automatically activates external discoveries.
 
+## Development branch protection
+
+With the flat strategy, `branch-router` runs a read-only preflight from the project root
+before starting or resuming development. It blocks work on `DEFAULT_BRANCH` and suggests
+a branch using `FEATURE_BRANCH_PREFIX`. Trunk and custom strategies follow local policy.
+
+At installation, an explicit `DEFAULT_BRANCH` takes precedence. Otherwise, the installer uses
+the locally known `origin/HEAD`, or the remote HEAD when the project has a single remote with
+another name. If neither is available, it uses the current branch, or `main` on a detached HEAD.
+
+The core includes the same check as a Git hook at
+`<TASKS_DIR>/.workflow/scripts/git-hooks/pre-commit`. To configure it as the Git hook in a
+project without existing hooks, run this from the project root with the actual tasks directory:
+
+```sh
+git config --local core.hooksPath '<TASKS_DIR>/.workflow/scripts/git-hooks'
+```
+
+If the project uses existing Git hooks, call the installed script without arguments from
+its pre-commit hook and propagate the exit status. The Git hook blocks direct commits on
+the flat default branch. A merge already in progress can still be completed, and the
+review and merge checks continue to apply.
+
 ## Manifest version 1
 
 ```json
@@ -193,3 +216,7 @@ Repeating an unchanged update preserves all bytes. Caught write errors roll back
 power loss/process kill is not covered. Inspect a leftover `.workflow-install.lock` and the target
 inventory/files before retrying after such an interruption. No Git operation, hook, application task
 or external publication is performed by update.
+
+## Continual workflow
+
+See the [continual workflow guide](continual-workflow.md) to compare a rule change, promote it with human approval, and run deterministic project checks.

@@ -1,0 +1,43 @@
+#!/bin/sh
+set -eu
+
+kit_directory=$(CDPATH='' cd "$(dirname "$0")/../.." && pwd)
+. "$kit_directory/kit.env"
+
+case "$#" in
+    0) ;;
+    2) [ "$1" = task-start ] && [ -n "$2" ] || exit 2 ;;
+    *) printf 'Usage: pre-commit [task-start <task-slug>]\n' >&2; exit 2 ;;
+esac
+
+[ "$BRANCH_STRATEGY" = flat ] || exit 0
+
+if current_ref=$(git symbolic-ref --quiet HEAD); then
+    :
+else
+    branch_status=$?
+    if [ "$#" -eq 0 ] && [ "$branch_status" -eq 1 ]; then
+        exit 0
+    fi
+    printf 'Cannot determine the current Git branch. Switch to a named branch first.\n' >&2
+    exit 1
+fi
+
+[ "$current_ref" = "refs/heads/$DEFAULT_BRANCH" ] || exit 0
+
+if [ "$#" -eq 0 ]; then
+    if git rev-parse --quiet --verify MERGE_HEAD >/dev/null; then
+        exit 0
+    fi
+    printf 'Direct commit blocked on %s. Commit from a dedicated branch.\n' "$DEFAULT_BRANCH" >&2
+    exit 1
+fi
+
+proposed_branch="$FEATURE_BRANCH_PREFIX$2"
+if ! git check-ref-format "refs/heads/$proposed_branch" || [ "$proposed_branch" = "$DEFAULT_BRANCH" ]; then
+    printf 'Invalid dedicated branch: %s\n' "$proposed_branch" >&2
+    exit 2
+fi
+
+printf 'Development blocked on %s. Use the dedicated branch %s.\n' "$DEFAULT_BRANCH" "$proposed_branch" >&2
+exit 1

@@ -21,8 +21,10 @@ Resume at the existing task location. Questions and audits do not require creati
 Classify the intent using the table below. Sequence mixed requests (e.g. implement then merge)
 as separate routes; completing one does not authorize the next. For non-trivial changes,
 briefly state the route, applicable skills in order, owner/invariants and verification signal.
-Use [branch-router](../branch-router/SKILL.md) for branch decisions; do not infer permission
-from the route. If HEAD does not exist, report it; never invent a source SHA or target branch.
+Use [branch-router](../branch-router/SKILL.md) before any versioned change. For
+development start or resume, complete its preflight before creating or updating the task,
+changing its status or editing implementation files. This also applies without Tasks.
+Do not infer permission from the route. If HEAD does not exist, report it; never invent a source SHA or target branch.
 
 ## 2 — Choose the route
 
@@ -38,13 +40,17 @@ before reading optional skill paths; see Missing capabilities below.
 | **Bug** | `branch-router` → `bug-triage` before diagnosis → `bug-fix-trace` for runtime confirmation and corrective work (Bugs). For authorized probes/fixes, reuse the implementation route and its gates before edits. | Reproduction status, bounded correction and regression evidence; thematic trace when Bugs is installed. A report alone does not authorize a fix. |
 | **Documentation initialisation** | `branch-router` → check Knowledge in the installed inventory → its initialisation rules and `doc-pattern` only when installed. | Complement existing project guidance without duplication; report absent Knowledge in the response and stop documentary writes. This request alone does not create a task or activate an implementation route. |
 | **Implementation** | `branch-router` → applicable design gates below → `ants`/`write-task` for meaningful changes (Tasks; reuse the existing contract) → `validate-task` when applicable (Quality) → implementation gates below → authorized edits → technical verification → `done-check` (Quality). | Verified change with actual evidence and limits in the existing task; no review, commit or merge inferred. |
+| **Release preparation** | `branch-router` → confirm the base, included changes and release target → reconcile and run the project’s delivery checks → authorized push of the candidate branch. | Candidate SHA and verification results. A later default-branch merge follows the Merge route. |
 | **Merge** | `branch-router` → `review-gate` before a merge into DEFAULT_BRANCH or when independent review is requested (Quality) → explicitly authorized merge → `merge-integrity` immediately afterward (Quality). | Exact source/target/SHA and required review verdict before merge; integrity evidence afterward. Source changes invalidate review approval. |
 
 Design gates for planning/implementation, only when Quality is installed:
 
 - Growth with duration, item count, reconnects or lifecycle events → `soak-readiness` before
   `write-task`, `validate-task` or edits; carry its contract and overflow proof into the task.
-- A performance claim → `perf-gate` before implementation; retain its fixed protocol and measurements.
+- Before a code change, check whether the patch could increase execution frequency, work per
+  item, subscriptions or retained data. If it could, or the effect is uncertain, use the
+  preservation route in `perf-gate` before editing. A stated performance claim uses the
+  optimization route and its fixed measurement protocol.
 
 Implementation gates, only when Quality is installed:
 

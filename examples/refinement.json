@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "protocol": {
+    "task": "Link to the source task",
+    "incidentEvidence": "Link to the original evidence",
+    "hypothesis": "State the rule gap and the result that would disprove it",
+    "setup": "Identify the rule version, model, settings, tools and isolated session setup",
+    "reopenWhen": "Describe the observation that would warrant reevaluation",
+    "budget": { "maxAttempts": 1, "maxSeconds": 300 },
+    "cases": {
+      "reproduction": { "task": "Original incident fixture", "expected": "Observable expected behavior" },
+      "validation": { "task": "Independent fixture held back from drafting", "expected": "Observable expected behavior" },
+      "negativeControl": { "task": "Unrelated fixture", "expected": "Behavior both variants must preserve" }
+    }
+  }
+}

@@ -50,9 +50,23 @@ npx ants-kit add knowledge quality
 
 `npx ants-kit list` shows the available modules. Choose `architecture` explicitly; even the `complete` profile leaves it out. To fit your team's conventions, set branch policy and verification commands in a [project configuration](examples/project.env), or build a module from the [project notes example](examples/modules/project-notes/module.json) and [module guide](docs/modules.md).
 
-### New in 0.7.0
+### New in 0.8.0
 
-With `quality` installed, ask for a workflow retrospective on a named task or incident. The [`workflow-retro` skill](modules/quality/skills/workflow-retro/SKILL.md) checks whether the evidence points to a gap in the current workflow. It can propose a small change, but never applies it or writes files.
+- **Run project checks.** `ants verify` runs the commands in your
+  [project configuration](examples/project.env). Add `--integrity` to check the kit
+  installation and `--json` for a machine-readable report.
+
+  ```bash
+  npx ants-kit verify --integrity --json
+  ```
+
+- **Protect the default branch.** With the flat branch strategy, ANTS checks the branch before
+  development starts or resumes. You can also activate the Git hook to block direct commits on
+  the default branch. See [branch protection](docs/modules.md#development-branch-protection).
+- **Test a workflow change.** With `quality` installed, start with a
+  [workflow retrospective](modules/quality/skills/workflow-retro/SKILL.md) on a named task or incident.
+  Compare the existing and proposed rules, then use `ants refine` to check the recorded evidence and
+  promote the change after approval. See the [continual workflow guide](docs/continual-workflow.md).
 
 ## You decide what gets shared and shipped
 

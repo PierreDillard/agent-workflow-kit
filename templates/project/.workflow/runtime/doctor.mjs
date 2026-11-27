@@ -58,6 +58,9 @@ export function sessionStart(projectRoot) {
   const tasksDirectory = state.configuration.tasksDirectory;
   if (branch) {
     console.log(`Workflow context for branch ${branch}`);
+    if (state.configuration.branchStrategy === 'flat' && branch === state.configuration.defaultBranch) {
+      console.log('Before development writes, use branch-router to select and check a dedicated branch.');
+    }
     const safeBranch = branch.replaceAll('/', '-');
     const pointers = [
       ['tasks', `${tasksDirectory}/todo/${safeBranch}/README.md`],

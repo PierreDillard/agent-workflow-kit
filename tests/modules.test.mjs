@@ -66,6 +66,93 @@ function makeModule(setup, moduleId, overrides = {}) {
   return source;
 }
 
+test('core branch preflight and Git hook use the configured flat branch policy', context => {
+  const setup = fixture(context, 'DEFAULT_BRANCH=integration\nFEATURE_BRANCH_PREFIX=work/\n');
+  const git = (argumentsList, expectedSuccess = true) =>
+    command('git', ['-C', setup.project, ...argumentsList], expectedSuccess);
+  git(['symbolic-ref', 'HEAD', 'refs/heads/integration']);
+  git(['config', 'user.name', 'Workflow Test']);
+  git(['config', 'user.email', 'workflow@example.invalid']);
+  git(['config', 'core.hooksPath', join(setup.root, 'disabled-hooks')]);
+  git(['commit', '--allow-empty', '-qm', 'Initial commit']);
+  git(['branch', 'main', 'HEAD']);
+  git(['branch', 'master', 'HEAD']);
+  git(['tag', 'integration']);
+
+  install(setup, ['--modules', 'reporting']);
+  assert.ok(state(setup).modules.every(module => module.id !== 'tasks'));
+  const hooksDirectory = `${kit}/scripts/git-hooks`;
+  const hookPath = `./${hooksDirectory}/pre-commit`;
+  for (const client of ['.claude', '.codex']) {
+    const router = read(setup, `${client}/skills/branch-router/SKILL.md`);
+    assert.ok(router.includes(hookPath));
+    assert.match(read(setup, `${client}/skills/project-workflow/SKILL.md`), /preflight before creating or updating the task/);
+    const configurationPath = client === '.claude' ? '.claude/settings.json' : '.codex/hooks.json';
+    const startup = JSON.parse(read(setup, configurationPath)).hooks.SessionStart[0].hooks[0];
+    const result = spawnSync('bash', ['-c', startup.command], {
+      cwd: setup.project, encoding: 'utf8', env: { ...process.env, CLAUDE_PROJECT_DIR: setup.project },
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Workflow context for branch integration/);
+    assert.match(result.stdout, /Before development writes, use branch-router/);
+  }
+  const taskStart = slug =>
+    spawnSync('sh', [hookPath, 'task-start', slug], { cwd: setup.project, encoding: 'utf8' });
+
+  git(['config', 'core.hooksPath', hooksDirectory]);
+  const initialHead = git(['rev-parse', 'HEAD']);
+  const before = snapshot(setup.project);
+  assert.match(taskStart('prospection').stderr, /blocked on integration.*work\/prospection/);
+  assert.equal(taskStart('prospection').status, 1);
+  assert.equal(taskStart('invalid slug').status, 2);
+  assert.deepEqual(snapshot(setup.project), before);
+  assert.match(git(['commit', '--allow-empty', '-m', 'Blocked'], false), /Direct commit blocked on integration/);
+  assert.equal(git(['rev-parse', 'HEAD']), initialHead);
+
+  for (const allowedBranch of ['main', 'master']) {
+    git(['switch', allowedBranch]);
+    assert.equal(taskStart('prospection').status, 0);
+    git(['commit', '--allow-empty', '-qm', 'Allowed']);
+  }
+
+  git(['switch', '--detach', 'HEAD']);
+  const detachedStart = taskStart('prospection');
+  assert.equal(detachedStart.status, 1);
+  assert.match(detachedStart.stderr, /Cannot determine the current Git branch/);
+
+  git(['switch', '-c', 'work/prospection']);
+  assert.equal(taskStart('prospection').status, 0);
+  writeFileSync(join(setup.project, 'implementation.txt'), 'feature content\n');
+  git(['add', 'implementation.txt']);
+  git(['commit', '-qm', 'Feature change']);
+  git(['switch', 'integration']);
+  git(['merge', '--no-ff', '--no-commit', 'work/prospection']);
+  git(['commit', '-qm', 'Complete authorized merge']);
+  assert.equal(read(setup, 'implementation.txt'), 'feature content\n');
+});
+
+test('branch preflight and Git hook leave trunk and custom policy to the project', context => {
+  for (const strategy of ['trunk', 'custom']) {
+    const setup = fixture(context, `DEFAULT_BRANCH=main\nBRANCH_STRATEGY=${strategy}\n`);
+    if (strategy === 'custom') {
+      const branchPolicyPath = join(setup.root, 'branch-policy.md');
+      writeFileSync(branchPolicyPath, 'The project owns its custom policy.\n');
+      writeFileSync(setup.config, `BRANCH_POLICY_FILE=${branchPolicyPath}\n`, { flag: 'a' });
+    }
+    const git = argumentsList => command('git', ['-C', setup.project, ...argumentsList]);
+    git(['symbolic-ref', 'HEAD', 'refs/heads/main']);
+    git(['config', 'user.name', 'Workflow Test']);
+    git(['config', 'user.email', 'workflow@example.invalid']);
+    install(setup, ['--modules', 'tasks']);
+    const hooksDirectory = `${kit}/scripts/git-hooks`;
+    const preflight = spawnSync('sh', [`./${hooksDirectory}/pre-commit`, 'task-start', 'prospection'],
+      { cwd: setup.project, encoding: 'utf8' });
+    assert.equal(preflight.status, 0, preflight.stderr);
+    git(['config', 'core.hooksPath', hooksDirectory]);
+    git(['commit', '--allow-empty', '-qm', 'Local policy allows the commit']);
+  }
+});
+
 test('architecture is opt-in and installs its skill for both clients with a healthy doctor', context => {
   for (const profile of ['minimal', 'continuity', 'complete']) {
     const setup = fixture(context);
@@ -729,6 +816,37 @@ test('single kit directory: outside TASKS_DIR only agent discovery points are wr
       ['.claude/settings.json', '.codex/hooks.json', 'AGENTS.md', 'CLAUDE.md'].includes(file.path), file.path);
   }
   assert.match(read(setup, 'CLAUDE.md'), /\[planning notes\/tasks\/\.workflow\/PROJECT_RULES\.md\]\(<planning notes\/tasks\/\.workflow\/PROJECT_RULES\.md>\)/);
+});
+
+test('CLI: init from a feature branch protects the remote default and honors explicit configuration', context => {
+  for (const { remote, defaultBranch, configuredBranch } of [
+    { remote: 'origin', defaultBranch: 'main' },
+    { remote: 'upstream', defaultBranch: 'release/stable' },
+    { remote: 'origin', defaultBranch: 'main', configuredBranch: 'integration' },
+  ]) {
+    const setup = fixture(context, configuredBranch ? `DEFAULT_BRANCH=${configuredBranch}\n` : '');
+    const git = (argumentsList, expectedSuccess = true) =>
+      command('git', ['-C', setup.project, ...argumentsList], expectedSuccess);
+    git(['symbolic-ref', 'HEAD', `refs/heads/${defaultBranch}`]);
+    git(['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', '-c', 'commit.gpgsign=false',
+      'commit', '--allow-empty', '-qm', 'Initial commit']);
+    git(['remote', 'add', remote, setup.root]);
+    git(['update-ref', `refs/remotes/${remote}/${defaultBranch}`, 'HEAD']);
+    git(['symbolic-ref', `refs/remotes/${remote}/HEAD`, `refs/remotes/${remote}/${defaultBranch}`]);
+    git(['switch', '-qc', 'dev/feature']);
+    install(setup);
+    const protectedBranch = configuredBranch ?? defaultBranch;
+    assert.equal(state(setup).configuration.defaultBranch, protectedBranch);
+
+    git(['config', 'user.name', 'Fixture']);
+    git(['config', 'user.email', 'fixture@example.invalid']);
+    git(['config', 'commit.gpgsign', 'false']);
+    git(['config', 'core.hooksPath', `${kit}/scripts/git-hooks`]);
+    git(['commit', '--allow-empty', '-qm', 'Feature commit']);
+    git(['switch', '-q', ...(configuredBranch ? ['-c'] : []), protectedBranch]);
+    const rejectedCommit = git(['commit', '--allow-empty', '-m', 'Direct commit'], false);
+    assert.ok(rejectedCommit.includes(`Direct commit blocked on ${protectedBranch}.`), rejectedCommit);
+  }
 });
 
 test('CLI: configuration accepts Windows line endings', context => {

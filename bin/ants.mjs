@@ -7,6 +7,9 @@ import { createInterface } from 'node:readline';
 import { updateKit } from '../templates/project/.workflow/runtime/update.mjs';
 import { installOrAdd } from '../templates/project/.workflow/runtime/manage.mjs';
 import { loadCatalog, officialModules } from '../templates/project/.workflow/runtime/catalog.mjs';
+import { refine } from '../templates/project/.workflow/runtime/refine.mjs';
+import { verify } from '../templates/project/.workflow/runtime/verify.mjs';
+import { verificationCommands } from '../templates/project/.workflow/runtime/verification-config.mjs';
 import { doctor } from '../templates/project/.workflow/runtime/doctor.mjs';
 import { locateInstallation, validateTasksDirectory } from '../templates/project/.workflow/runtime/layout.mjs';
 
@@ -18,6 +21,8 @@ Commands:
   add       Add modules: add reporting quality, or --modules ids / --module PATH
   update    Preview the update, then apply it after confirmation
   doctor    Check the installation without modifying it
+  verify    Run configured project checks
+  refine    Preview or promote an evidence-backed workflow change
   list      List available modules
 
 Options:
@@ -25,6 +30,12 @@ Options:
   --dry-run              Show the plan without writing anything
   -y, --yes              Use defaults without questions; apply an update without asking
   --config FILE          Project configuration (see examples/project.env)
+  --integrity            Include declarative installation checks in verify
+  --json                 Print a machine-readable verification report
+  --timeout SECONDS      Time budget for verification commands (default: 300)
+  --record PATH          Refinement record relative to the project root
+  --tip SHA              Exact refinement evidence commit
+  --approve-plan HASH    Human approval of the exact refinement plan
   --tasks-dir PATH       Single kit directory (default: tasks)
   --local                Keep the tasks directory out of Git (.git/info/exclude)
   --profile NAME         minimal | continuity | complete
@@ -37,22 +48,33 @@ Options:
   --revision SHA         Require this exact checkout revision for update`;
 
 const configurationKeys = ['PROJECT_NAME', 'DEFAULT_BRANCH', 'BRANCH_STRATEGY', 'FEATURE_BRANCH_PREFIX', 'BRANCH_POLICY_FILE',
-  'TASKS_DIR', 'DEV_COMMAND', 'BUILD_COMMAND', 'TEST_COMMAND', 'LINT_COMMAND', 'TYPECHECK_COMMAND', 'REQUIRE_PRECOMMIT',
+  'TASKS_DIR', 'DEV_COMMAND', ...Object.keys(verificationCommands), 'REQUIRE_PRECOMMIT',
   'INSTALL_GLOBAL_SKILLS', 'REPORT_TIMEZONE', 'TRACK_TASKS_DIR'];
 const shellKeys = ['PROJECT_NAME', 'TASKS_DIR', 'DEFAULT_BRANCH', 'BRANCH_STRATEGY', 'FEATURE_BRANCH_PREFIX',
-  'DEV_COMMAND', 'BUILD_COMMAND', 'TEST_COMMAND', 'LINT_COMMAND', 'TYPECHECK_COMMAND', 'REQUIRE_PRECOMMIT', 'INSTALL_GLOBAL_SKILLS'];
+  'DEV_COMMAND', ...Object.keys(verificationCommands), 'REQUIRE_PRECOMMIT', 'INSTALL_GLOBAL_SKILLS'];
 
 function git(args) {
   const result = spawnSync('git', args, { encoding: 'utf8' });
   return result.status === 0 ? result.stdout.trim() : null;
 }
 
+function detectDefaultBranch(projectRoot) {
+  const remoteNames = (git(['-C', projectRoot, 'remote']) ?? '').split('\n').filter(Boolean);
+  const remote = remoteNames.length === 1 ? remoteNames[0] : 'origin';
+  const remotePrefix = `refs/remotes/${remote}/`;
+  const remoteHead = git(['-C', projectRoot, 'symbolic-ref', '--quiet', `${remotePrefix}HEAD`]);
+  if (remoteHead?.startsWith(remotePrefix)) return remoteHead.slice(remotePrefix.length);
+  return git(['-C', projectRoot, 'symbolic-ref', '--short', 'HEAD']) ?? 'main';
+}
+
 function parseArguments(argumentsList) {
   const options = { catalogs: [join(kitRoot, 'modules')], sources: [], settings: {}, positional: [], dryRun: false, yes: false };
   const valueFlags = { '--target': 'target', '--config': 'config', '--tasks-dir': 'tasksDirectory', '--user-root': 'userRoot',
-    '--profile': 'profile', '--expect-plan': 'expectPlan', '--revision': 'revision' };
+    '--profile': 'profile', '--timeout': 'timeout', '--record': 'record', '--tip': 'tip', '--approve-plan': 'approvePlan', '--expect-plan': 'expectPlan', '--revision': 'revision' };
   while (argumentsList.length) {
     const flag = argumentsList.shift();
+    if (flag === '--json') { options.json = true; continue; }
+    if (flag === '--integrity') { options.integrity = true; continue; }
     if (flag === '--dry-run') { options.dryRun = true; continue; }
     if (flag === '--yes' || flag === '-y' || flag === '--non-interactive') { options.yes = true; continue; }
     if (flag === '--local') { options.local = true; continue; }
@@ -127,11 +149,12 @@ function checkBoolean(values, key) {
 async function install(options) {
   const projectRoot = resolveTarget(options.target);
   if (locateInstallation(projectRoot)) throw new Error('Workflow kit already installed; use add or update');
-  const detectedBranch = git(['-C', projectRoot, 'symbolic-ref', '--short', 'HEAD']) ?? 'main';
-  const values = { PROJECT_NAME: basename(projectRoot), DEFAULT_BRANCH: detectedBranch, BRANCH_STRATEGY: 'flat',
-    FEATURE_BRANCH_PREFIX: 'dev/', BRANCH_POLICY_FILE: '', TASKS_DIR: 'tasks', DEV_COMMAND: '', BUILD_COMMAND: '',
-    TEST_COMMAND: '', LINT_COMMAND: '', TYPECHECK_COMMAND: '', REQUIRE_PRECOMMIT: 'false', INSTALL_GLOBAL_SKILLS: 'true',
-    REPORT_TIMEZONE: 'Europe/Paris', TRACK_TASKS_DIR: 'true', ...(options.config ? loadConfiguration(options.config) : {}) };
+  const configuration = options.config ? loadConfiguration(options.config) : {};
+  const values = { PROJECT_NAME: basename(projectRoot),
+    DEFAULT_BRANCH: configuration.DEFAULT_BRANCH ?? detectDefaultBranch(projectRoot), BRANCH_STRATEGY: 'flat',
+    FEATURE_BRANCH_PREFIX: 'dev/', BRANCH_POLICY_FILE: '', TASKS_DIR: 'tasks', DEV_COMMAND: '',
+    ...Object.fromEntries(Object.keys(verificationCommands).map(key => [key, ''])), REQUIRE_PRECOMMIT: 'false', INSTALL_GLOBAL_SKILLS: 'true',
+    REPORT_TIMEZONE: 'Europe/Paris', TRACK_TASKS_DIR: 'true', ...configuration };
   if (options.tasksDirectory) values.TASKS_DIR = options.tasksDirectory;
   if (options.local) values.TRACK_TASKS_DIR = 'false';
   if (!values.PROJECT_NAME) values.PROJECT_NAME = basename(projectRoot);
@@ -195,8 +218,24 @@ async function main() {
   if (Number(process.versions.node.split('.')[0]) < 18) throw new Error('Node.js 18 or newer required');
   if (!git(['--version'])) throw new Error('Missing prerequisite: git');
   const [command = 'help', ...rest] = process.argv.slice(2);
-  const options = parseArguments(rest);
+  const options = parseArguments([...rest]);
   if (options.help || command === 'help' || command === '--help' || command === '-h') { console.log(usage); return; }
+  if (command === 'verify' || command === 'refine') {
+    const allowed = command === 'verify' ? ['target', 'config', 'timeout', 'integrity', 'json', 'userRoot'] : ['target', 'record', 'tip', 'approvePlan'];
+    const incompatible = Object.keys(options).find(key => !allowed.includes(key) && !['catalogs', 'sources', 'settings', 'positional', 'dryRun', 'yes'].includes(key));
+    const hasInstallOptions = options.catalogs.length > 1 || options.sources.length || Object.keys(options.settings).length || options.dryRun || options.yes;
+    if (incompatible || hasInstallOptions || options.positional.length !== (command === 'refine' ? 1 : 0)) {
+      throw new Error('Invalid arguments for ' + command + '; see ants --help');
+    }
+  }
+  if (command === 'refine') return refine(resolveTarget(options.target), { ...options, action: options.positional[0] });
+  if (options.record !== undefined || options.tip !== undefined || options.approvePlan !== undefined) {
+    throw new Error('--record, --tip and --approve-plan are refine-only options');
+  }
+  if (command === 'verify') {
+    return verify(resolveTarget(options.target), options);
+  }
+  if (options.json || options.integrity || options.timeout !== undefined) throw new Error('--json, --integrity and --timeout are verify-only options');
   if (['install', 'init'].includes(command) || command === 'add') {
     if (options.expectPlan || options.revision) throw new Error('--expect-plan and --revision are update-only options');
   }
